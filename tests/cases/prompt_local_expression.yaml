@@ -1,0 +1,4 @@
+before_stack: ["10"]
+input: "12 12 *"
+expected_after_stack: ["10"]
+expected_after_input: "144"

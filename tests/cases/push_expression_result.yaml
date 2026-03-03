@@ -1,0 +1,4 @@
+before_stack: ["3", "4"]
+input: "12"
+expected_after_stack: ["3", "4", "12"]
+expected_after_input: ""
