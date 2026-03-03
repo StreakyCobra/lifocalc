@@ -67,7 +67,7 @@ fn render_input(frame: &mut Frame, app: &App, area: Rect) {
 
     if inner.width > 0 && inner.height > 0 {
         let max_offset = inner.width.saturating_sub(1) as usize;
-        let cursor_offset = app.input().chars().count().min(max_offset) as u16;
+        let cursor_offset = app.cursor().min(max_offset) as u16;
         frame.set_cursor_position((inner.x + cursor_offset, inner.y));
     }
 }

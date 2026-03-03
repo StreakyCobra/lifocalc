@@ -3,6 +3,8 @@
 "backspace" = "app.backspace"
 "ctrl+backspace" = "app.delete_word_backward"
 "ctrl+l" = "app.clear_input"
+"left" = "app.cursor_left"
+"right" = "app.cursor_right"
 "up" = "history.prev"
 "down" = "history.next"
 "esc" = "app.exit"

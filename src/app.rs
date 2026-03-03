@@ -3,6 +3,7 @@ use crate::engine;
 #[derive(Debug, Default)]
 pub struct App {
     input: String,
+    cursor: usize,
     stack: Vec<f64>,
     history: Vec<String>,
     history_index: Option<usize>,
@@ -16,6 +17,10 @@ impl App {
 
     pub fn input(&self) -> &str {
         &self.input
+    }
+
+    pub fn cursor(&self) -> usize {
+        self.cursor
     }
 
     pub fn stack(&self) -> &[f64] {
@@ -32,26 +37,47 @@ impl App {
 
     pub fn set_input(&mut self, input: impl Into<String>) {
         self.input = input.into();
+        self.cursor = self.input.chars().count();
         self.history_index = None;
         self.status = None;
     }
 
     pub fn insert_char(&mut self, character: char) {
-        self.input.push(character);
+        let insert_at = byte_index_for_char(&self.input, self.cursor);
+        self.input.insert(insert_at, character);
+        self.cursor += 1;
         self.history_index = None;
         self.status = None;
     }
 
     pub fn backspace(&mut self) {
-        self.input.pop();
+        if self.cursor == 0 {
+            return;
+        }
+
+        self.remove_char_before_cursor();
         self.history_index = None;
         self.status = None;
     }
 
     pub fn clear_input(&mut self) {
         self.input.clear();
+        self.cursor = 0;
         self.history_index = None;
         self.status = None;
+    }
+
+    pub fn move_cursor_left(&mut self) {
+        if self.cursor > 0 {
+            self.cursor -= 1;
+        }
+    }
+
+    pub fn move_cursor_right(&mut self) {
+        let len = self.input.chars().count();
+        if self.cursor < len {
+            self.cursor += 1;
+        }
     }
 
     pub fn delete_word_backward(&mut self) {
@@ -59,21 +85,27 @@ impl App {
         self.status = None;
 
         while self
-            .input
-            .chars()
-            .last()
+            .char_before_cursor()
             .is_some_and(|character| character.is_whitespace())
         {
-            self.input.pop();
+            self.remove_char_before_cursor();
         }
 
         while self
-            .input
-            .chars()
-            .last()
+            .char_before_cursor()
             .is_some_and(|character| !character.is_whitespace())
         {
-            self.input.pop();
+            self.remove_char_before_cursor();
+        }
+
+        while self
+            .char_before_cursor()
+            .is_some_and(|character| character.is_whitespace())
+            && self
+                .char_at_cursor()
+                .is_some_and(|character| character.is_whitespace())
+        {
+            self.remove_char_before_cursor();
         }
     }
 
@@ -93,6 +125,7 @@ impl App {
                 Ok(numbers) => {
                     self.stack.extend(numbers);
                     self.input.clear();
+                    self.cursor = 0;
                     self.status = None;
                 }
                 Err(error) => {
@@ -117,9 +150,11 @@ impl App {
                 if should_mutate_global_stack {
                     self.stack = candidate_stack;
                     self.input.clear();
+                    self.cursor = 0;
                 } else {
                     self.stack.push(value);
                     self.input.clear();
+                    self.cursor = 0;
                 }
                 self.status = None;
             }
@@ -142,6 +177,7 @@ impl App {
 
         self.history_index = Some(next_index);
         self.input = self.history[next_index].clone();
+        self.cursor = self.input.chars().count();
         self.status = None;
     }
 
@@ -153,6 +189,7 @@ impl App {
         if index + 1 >= self.history.len() {
             self.history_index = None;
             self.input.clear();
+            self.cursor = 0;
             self.status = None;
             return;
         }
@@ -160,6 +197,7 @@ impl App {
         let next_index = index + 1;
         self.history_index = Some(next_index);
         self.input = self.history[next_index].clone();
+        self.cursor = self.input.chars().count();
         self.status = None;
     }
 
@@ -184,6 +222,41 @@ impl App {
             .map(|value| engine::format_number(*value))
             .collect()
     }
+
+    fn char_before_cursor(&self) -> Option<char> {
+        if self.cursor == 0 {
+            return None;
+        }
+
+        self.input.chars().nth(self.cursor - 1)
+    }
+
+    fn char_at_cursor(&self) -> Option<char> {
+        self.input.chars().nth(self.cursor)
+    }
+
+    fn remove_char_before_cursor(&mut self) {
+        if self.cursor == 0 {
+            return;
+        }
+
+        let start = byte_index_for_char(&self.input, self.cursor - 1);
+        let end = byte_index_for_char(&self.input, self.cursor);
+        self.input.replace_range(start..end, "");
+        self.cursor -= 1;
+    }
+}
+
+fn byte_index_for_char(input: &str, char_index: usize) -> usize {
+    if char_index == 0 {
+        return 0;
+    }
+
+    input
+        .char_indices()
+        .nth(char_index)
+        .map(|(index, _)| index)
+        .unwrap_or(input.len())
 }
 
 #[cfg(test)]
@@ -216,5 +289,28 @@ mod tests {
         app.delete_word_backward();
 
         assert_eq!(app.input(), "12 ");
+    }
+
+    #[test]
+    fn delete_word_backward_respects_cursor_position() {
+        let mut app = App::new();
+        app.set_input("12 34 56");
+        app.move_cursor_left();
+        app.move_cursor_left();
+        app.move_cursor_left();
+
+        app.delete_word_backward();
+
+        assert_eq!(app.input(), "12 56");
+    }
+
+    #[test]
+    fn cursor_left_right_navigates_input() {
+        let mut app = App::new();
+        app.set_input("12");
+        app.move_cursor_left();
+        app.insert_char('x');
+
+        assert_eq!(app.input(), "1x2");
     }
 }
