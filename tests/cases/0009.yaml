@@ -1,0 +1,5 @@
+description: "sum works in prompt-local expression stack"
+before_stack: []
+input: "1 2 3 sum"
+expected_after_stack: ["6"]
+expected_after_input: ""

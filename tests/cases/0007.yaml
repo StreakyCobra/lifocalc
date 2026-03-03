@@ -1,6 +1,6 @@
 description: "unknown operator keeps stack unchanged and reports error"
 before_stack: ["12", "34"]
-input: "sum"
+input: "foo"
 expected_after_stack: ["12", "34"]
-expected_after_input: "sum"
-expected_status: "unknown token: sum"
+expected_after_input: "foo"
+expected_status: "unknown token: foo"

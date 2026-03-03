@@ -1,0 +1,5 @@
+description: "sum collapses global stack into total"
+before_stack: ["12", "34", "5"]
+input: "sum"
+expected_after_stack: ["51"]
+expected_after_input: ""

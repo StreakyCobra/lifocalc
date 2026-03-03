@@ -86,24 +86,41 @@ pub fn format_number(number: f64) -> String {
 }
 
 fn apply_operator(operator: &str, stack: &mut Vec<f64>) -> Result<(), EngineError> {
-    let (lhs, rhs) = pop_two(stack)?;
+    match operator {
+        "+" | "-" | "*" | "/" => {
+            let (lhs, rhs) = pop_two(stack)?;
+            let value = match operator {
+                "+" => lhs + rhs,
+                "-" => lhs - rhs,
+                "*" => lhs * rhs,
+                "/" => {
+                    if rhs == 0.0 {
+                        return Err(EngineError::DivisionByZero);
+                    }
 
-    let value = match operator {
-        "+" => lhs + rhs,
-        "-" => lhs - rhs,
-        "*" => lhs * rhs,
-        "/" => {
-            if rhs == 0.0 {
-                return Err(EngineError::DivisionByZero);
+                    lhs / rhs
+                }
+                _ => unreachable!("operator filtered by match arm"),
+            };
+
+            stack.push(value);
+            Ok(())
+        }
+        "sum" => {
+            if stack.is_empty() {
+                return Err(EngineError::StackUnderflow {
+                    needed: 1,
+                    available: 0,
+                });
             }
 
-            lhs / rhs
+            let value: f64 = stack.iter().sum();
+            stack.clear();
+            stack.push(value);
+            Ok(())
         }
-        _ => return Err(EngineError::UnknownToken(operator.to_string())),
-    };
-
-    stack.push(value);
-    Ok(())
+        _ => Err(EngineError::UnknownToken(operator.to_string())),
+    }
 }
 
 fn pop_two(stack: &mut Vec<f64>) -> Result<(f64, f64), EngineError> {
@@ -154,5 +171,15 @@ mod tests {
 
         assert_eq!(result, 7.0);
         assert_eq!(stack, vec![7.0]);
+    }
+
+    #[test]
+    fn sum_collapses_stack_to_single_total() {
+        let mut stack = vec![3.0, 4.0, 5.0];
+        let result = evaluate_expression_in_place("sum", &mut stack)
+            .expect("expected sum to evaluate in place");
+
+        assert_eq!(result, 12.0);
+        assert_eq!(stack, vec![12.0]);
     }
 }

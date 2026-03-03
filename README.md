@@ -13,6 +13,7 @@
 - History navigation with up/down arrows.
 - Live hint shown after the current input.
 - Inline status message for evaluation errors.
+- Supported operators in this boilerplate: `+`, `-`, `*`, `/`, `sum`.
 
 ## Project layout
 
