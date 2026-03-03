@@ -27,7 +27,7 @@ fn run_yaml_case(path: &Path) -> datatest_stable::Result<()> {
     app.set_stack(before_stack);
     app.set_input(case.input.clone());
 
-    app.submit_input();
+    let _ = app.submit_input();
 
     if app.stack_as_strings() != case.expected_after_stack {
         return Err(format!(

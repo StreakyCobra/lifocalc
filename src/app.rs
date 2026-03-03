@@ -31,6 +31,11 @@ impl App {
         self.stack = stack;
     }
 
+    pub fn set_history(&mut self, history: Vec<String>) {
+        self.history = history;
+        self.history_index = None;
+    }
+
     pub fn status(&self) -> Option<&str> {
         self.status.as_deref()
     }
@@ -109,11 +114,11 @@ impl App {
         }
     }
 
-    pub fn submit_input(&mut self) {
+    pub fn submit_input(&mut self) -> Option<String> {
         let trimmed = self.input.trim();
         if trimmed.is_empty() {
             self.status = None;
-            return;
+            return None;
         }
 
         let entry = trimmed.to_string();
@@ -133,7 +138,7 @@ impl App {
                 }
             }
 
-            return;
+            return Some(entry);
         }
 
         let should_mutate_global_stack = !engine::has_number_token(&entry);
@@ -162,6 +167,8 @@ impl App {
                 self.status = Some(error.to_string());
             }
         }
+
+        Some(entry)
     }
 
     pub fn history_up(&mut self) {
@@ -273,9 +280,9 @@ mod tests {
     fn history_navigation_round_trips_to_empty_input() {
         let mut app = App::new();
         app.set_input("2");
-        app.submit_input();
+        let _ = app.submit_input();
         app.set_input("3 4 +");
-        app.submit_input();
+        let _ = app.submit_input();
 
         app.history_up();
         assert_eq!(app.input(), "3 4 +");

@@ -8,6 +8,7 @@ use crossterm::{
 };
 use lifocalc::{
     app::App,
+    history::HistoryStore,
     keybindings::{Action, KeyBindings},
     ui,
 };
@@ -38,6 +39,14 @@ fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Re
 fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> {
     let mut app = App::new();
     let keybindings = KeyBindings::load();
+    let history_store = HistoryStore::for_user();
+
+    if let Some(store) = &history_store {
+        match store.load_entries() {
+            Ok(entries) => app.set_history(entries),
+            Err(error) => eprintln!("warning: {error}"),
+        }
+    }
 
     loop {
         terminal.draw(|frame| ui::draw(frame, &app))?;
@@ -51,7 +60,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
                 continue;
             }
 
-            if dispatch_action(key_event, &keybindings, &mut app) {
+            if dispatch_action(key_event, &keybindings, &mut app, history_store.as_ref()) {
                 break;
             }
         }
@@ -60,11 +69,24 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
     Ok(())
 }
 
-fn dispatch_action(key_event: KeyEvent, keybindings: &KeyBindings, app: &mut App) -> bool {
+fn dispatch_action(
+    key_event: KeyEvent,
+    keybindings: &KeyBindings,
+    app: &mut App,
+    history_store: Option<&HistoryStore>,
+) -> bool {
     if let Some(action) = keybindings.action_for_event(key_event) {
         match action {
             Action::Exit => return true,
-            Action::Evaluate => app.submit_input(),
+            Action::Evaluate => {
+                if let Some(entry) = app.submit_input() {
+                    if let Some(store) = history_store {
+                        if let Err(error) = store.append_entry(&entry) {
+                            eprintln!("warning: {error}");
+                        }
+                    }
+                }
+            }
             Action::Backspace => app.backspace(),
             Action::DeleteWordBackward => app.delete_word_backward(),
             Action::CursorLeft => app.move_cursor_left(),
