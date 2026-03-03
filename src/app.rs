@@ -158,41 +158,6 @@ mod tests {
     use super::App;
 
     #[test]
-    fn pushing_numbers_clears_input_and_updates_stack() {
-        let mut app = App::new();
-        app.set_input("1 2 3");
-
-        app.submit_input();
-
-        assert_eq!(app.stack(), &[1.0, 2.0, 3.0]);
-        assert_eq!(app.input(), "");
-    }
-
-    #[test]
-    fn operator_only_input_mutates_global_stack() {
-        let mut app = App::new();
-        app.set_stack(vec![3.0, 4.0]);
-        app.set_input("*");
-
-        app.submit_input();
-
-        assert_eq!(app.input(), "12");
-        assert_eq!(app.stack(), &[]);
-    }
-
-    #[test]
-    fn inline_expression_keeps_global_stack_unchanged() {
-        let mut app = App::new();
-        app.set_stack(vec![10.0]);
-        app.set_input("12 12 *");
-
-        app.submit_input();
-
-        assert_eq!(app.input(), "144");
-        assert_eq!(app.stack(), &[10.0]);
-    }
-
-    #[test]
     fn history_navigation_round_trips_to_empty_input() {
         let mut app = App::new();
         app.set_input("2");

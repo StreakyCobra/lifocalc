@@ -25,6 +25,7 @@
 
 Test cases live in `tests/cases/*.yaml` and are executed by `tests/yaml_cases.rs`.
 Use numbered filenames (`0001.yaml`, `0002.yaml`, ...) and describe each case inside YAML.
+These YAML files are the primary behavior tests; Rust unit tests are kept for lower-level internals such as engine helpers and history navigation.
 
 Each file defines one interaction step:
 
