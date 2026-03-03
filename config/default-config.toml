@@ -1,5 +1,5 @@
 [keybindings]
-"enter" = "app.submit"
+"enter" = "app.evaluate"
 "backspace" = "app.backspace"
 "ctrl+backspace" = "app.delete_word_backward"
 "ctrl+h" = "app.delete_word_backward"

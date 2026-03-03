@@ -8,7 +8,7 @@ const DEFAULT_CONFIG_TOML: &str = include_str!("../config/default-config.toml");
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Action {
     Exit,
-    Submit,
+    Evaluate,
     Backspace,
     DeleteWordBackward,
     CursorLeft,
@@ -22,7 +22,7 @@ impl Action {
     fn from_id(action_id: &str) -> Option<Self> {
         match action_id {
             "app.exit" => Some(Self::Exit),
-            "app.submit" => Some(Self::Submit),
+            "app.evaluate" => Some(Self::Evaluate),
             "app.backspace" => Some(Self::Backspace),
             "app.delete_word_backward" => Some(Self::DeleteWordBackward),
             "app.cursor_left" => Some(Self::CursorLeft),

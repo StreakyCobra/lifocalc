@@ -64,7 +64,7 @@ fn dispatch_action(key_event: KeyEvent, keybindings: &KeyBindings, app: &mut App
     if let Some(action) = keybindings.action_for_event(key_event) {
         match action {
             Action::Exit => return true,
-            Action::Submit => app.submit_input(),
+            Action::Evaluate => app.submit_input(),
             Action::Backspace => app.backspace(),
             Action::DeleteWordBackward => app.delete_word_backward(),
             Action::CursorLeft => app.move_cursor_left(),

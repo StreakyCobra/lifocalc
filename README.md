@@ -86,7 +86,7 @@ Example:
 Built-in action IDs:
 
 - `app.exit`
-- `app.submit`
+- `app.evaluate`
 - `app.backspace`
 - `app.delete_word_backward`
 - `app.cursor_left`
