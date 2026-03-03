@@ -11,6 +11,11 @@ pub struct HistoryStore {
 
 impl HistoryStore {
     pub fn for_user() -> Option<Self> {
+        if let Some(state_home) = env::var_os("XDG_STATE_HOME") {
+            let path = PathBuf::from(state_home).join("lifocalc/history");
+            return Some(Self { path });
+        }
+
         let home = env::var_os("HOME")?;
         let path = PathBuf::from(home).join(".local/state/lifocalc/history");
         Some(Self { path })

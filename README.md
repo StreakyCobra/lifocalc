@@ -11,7 +11,7 @@
   - operator-only input consumes values from the global stack and pushes the result back to the stack.
   - expressions that include inline numbers are evaluated against an independent prompt-local stack, then the result is pushed to the global stack.
 - History navigation with up/down arrows.
-- Input history is persisted across app restarts in `~/.local/state/lifocalc/history`.
+- Input history is persisted across app restarts in `${XDG_STATE_HOME}/lifocalc/history`, or `~/.local/state/lifocalc/history` when `XDG_STATE_HOME` is unset.
 - Live hint shown after the current input.
 - Inline status message for evaluation errors.
 - Supported operators in this boilerplate: `+`, `-`, `*`, `/`, `sum`.
@@ -61,7 +61,7 @@ All numeric values in YAML are strings to keep test files stable while the inter
 
 `lifocalc` uses an embedded TOML default config from `config/default-config.toml` as the source of truth.
 
-- User overrides are loaded from `~/.config/lifocalc/config.toml` if the file exists.
+- User overrides are loaded from `${XDG_CONFIG_HOME}/lifocalc/config.toml`, or `~/.config/lifocalc/config.toml` when `XDG_CONFIG_HOME` is unset.
 - Final keymap is `embedded defaults + user overrides`.
 - Use `none` to disable a default binding.
 - Invalid keys or unknown action IDs are ignored with a warning.
