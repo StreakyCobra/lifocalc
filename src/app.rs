@@ -76,8 +76,9 @@ impl App {
 
         let should_mutate_global_stack = !engine::has_number_token(&entry);
 
+        let mut candidate_stack = self.stack.clone();
         let result = if should_mutate_global_stack {
-            engine::evaluate_expression_in_place(&entry, &mut self.stack)
+            engine::evaluate_expression_in_place(&entry, &mut candidate_stack)
         } else {
             engine::evaluate_expression(&entry, &self.stack)
         };
@@ -85,6 +86,7 @@ impl App {
         match result {
             Ok(value) => {
                 if should_mutate_global_stack {
+                    self.stack = candidate_stack;
                     self.input.clear();
                 } else {
                     self.stack.push(value);
