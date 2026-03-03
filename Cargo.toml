@@ -10,3 +10,11 @@ ratatui = "0.29"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 thiserror = "2.0"
+
+[dev-dependencies]
+datatest-stable = "0.3"
+
+[[test]]
+name = "yaml_cases"
+path = "tests/yaml_cases.rs"
+harness = false
