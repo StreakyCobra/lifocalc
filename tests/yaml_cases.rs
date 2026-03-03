@@ -48,14 +48,12 @@ fn run_yaml_case(path: &Path) -> datatest_stable::Result<()> {
     }
 
     match &case.expected_status {
-        Some(expected_status) if app.status() != Some(expected_status.as_str()) => {
-            Err(format!(
-                "{case_name}: status mismatch, got {:?}, expected {:?}",
-                app.status(),
-                expected_status
-            )
-            .into())
-        }
+        Some(expected_status) if app.status() != Some(expected_status.as_str()) => Err(format!(
+            "{case_name}: status mismatch, got {:?}, expected {:?}",
+            app.status(),
+            expected_status
+        )
+        .into()),
         Some(_) => Ok(()),
         None if app.status().is_some() => {
             Err(format!("{case_name}: expected no status, got {:?}", app.status()).into())
@@ -73,7 +71,10 @@ fn load_case(path: &Path) -> datatest_stable::Result<YamlCase> {
 }
 
 fn parse_stack(values: &[String]) -> Result<Vec<f64>, EngineError> {
-    values.iter().map(|value| engine::parse_number(value)).collect()
+    values
+        .iter()
+        .map(|value| engine::parse_number(value))
+        .collect()
 }
 
 datatest_stable::harness! {

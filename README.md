@@ -52,3 +52,35 @@ All numeric values in YAML are strings to keep test files stable while the inter
 1. Create a new `.yaml` file under `tests/cases/`.
 2. Fill in the required fields (`description`, `before_stack`, `input`, `expected_after_stack`, `expected_after_input`).
 3. Run `cargo test`.
+
+## Keybinding configuration
+
+`lifocalc` uses an embedded TOML default config from `config/default-config.toml` as the source of truth.
+
+- User overrides are loaded from `~/.config/lifocalc/config.toml` if the file exists.
+- Final keymap is `embedded defaults + user overrides`.
+- Use `none` to disable a default binding.
+- Invalid keys or unknown action IDs are ignored with a warning.
+
+Example:
+
+```toml
+[keybindings]
+"pageup" = "history.prev"
+"pagedown" = "history.next"
+"esc" = "app.exit"
+"ctrl+c" = "app.exit"
+"ctrl+l" = "app.clear_input"
+"up" = "none"
+"down" = "none"
+```
+
+Built-in action IDs:
+
+- `app.exit`
+- `app.submit`
+- `app.backspace`
+- `history.prev`
+- `history.next`
+- `app.clear_input`
+- `none` (special unbind value)

@@ -6,7 +6,11 @@ use crossterm::{
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use lifocalc::{app::App, ui};
+use lifocalc::{
+    app::App,
+    keybindings::{Action, KeyBindings},
+    ui,
+};
 use ratatui::{Terminal, prelude::CrosstermBackend};
 
 fn main() -> Result<()> {
@@ -33,6 +37,7 @@ fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Re
 
 fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> {
     let mut app = App::new();
+    let keybindings = KeyBindings::load();
 
     loop {
         terminal.draw(|frame| ui::draw(frame, &app))?;
@@ -46,37 +51,36 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
                 continue;
             }
 
-            if should_exit(key_event) {
+            if dispatch_action(key_event, &keybindings, &mut app) {
                 break;
             }
-
-            handle_key(key_event, &mut app);
         }
     }
 
     Ok(())
 }
 
-fn should_exit(key_event: KeyEvent) -> bool {
-    key_event.code == KeyCode::Esc
-        || (key_event.code == KeyCode::Char('c')
-            && key_event.modifiers.contains(KeyModifiers::CONTROL))
-        || (key_event.code == KeyCode::Char('d')
-            && key_event.modifiers.contains(KeyModifiers::CONTROL))
-}
+fn dispatch_action(key_event: KeyEvent, keybindings: &KeyBindings, app: &mut App) -> bool {
+    if let Some(action) = keybindings.action_for_event(key_event) {
+        match action {
+            Action::Exit => return true,
+            Action::Submit => app.submit_input(),
+            Action::Backspace => app.backspace(),
+            Action::HistoryPrev => app.history_up(),
+            Action::HistoryNext => app.history_down(),
+            Action::ClearInput => app.clear_input(),
+        }
 
-fn handle_key(key_event: KeyEvent, app: &mut App) {
-    match key_event.code {
-        KeyCode::Enter => app.submit_input(),
-        KeyCode::Backspace => app.backspace(),
-        KeyCode::Up => app.history_up(),
-        KeyCode::Down => app.history_down(),
-        KeyCode::Char(character)
-            if !key_event.modifiers.contains(KeyModifiers::CONTROL)
-                && !key_event.modifiers.contains(KeyModifiers::ALT) =>
+        return false;
+    }
+
+    if let KeyCode::Char(character) = key_event.code {
+        if !key_event.modifiers.contains(KeyModifiers::CONTROL)
+            && !key_event.modifiers.contains(KeyModifiers::ALT)
         {
             app.insert_char(character);
         }
-        _ => {}
     }
+
+    false
 }

@@ -48,6 +48,12 @@ impl App {
         self.status = None;
     }
 
+    pub fn clear_input(&mut self) {
+        self.input.clear();
+        self.history_index = None;
+        self.status = None;
+    }
+
     pub fn submit_input(&mut self) {
         let trimmed = self.input.trim();
         if trimmed.is_empty() {

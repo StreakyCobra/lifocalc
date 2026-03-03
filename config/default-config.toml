@@ -1,0 +1,8 @@
+[keybindings]
+"enter" = "app.submit"
+"backspace" = "app.backspace"
+"up" = "history.prev"
+"down" = "history.next"
+"esc" = "app.exit"
+"ctrl+c" = "app.exit"
+"ctrl+d" = "app.exit"
