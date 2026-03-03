@@ -10,6 +10,7 @@ pub enum Action {
     Exit,
     Submit,
     Backspace,
+    DeleteWordBackward,
     HistoryPrev,
     HistoryNext,
     ClearInput,
@@ -21,6 +22,7 @@ impl Action {
             "app.exit" => Some(Self::Exit),
             "app.submit" => Some(Self::Submit),
             "app.backspace" => Some(Self::Backspace),
+            "app.delete_word_backward" => Some(Self::DeleteWordBackward),
             "history.prev" => Some(Self::HistoryPrev),
             "history.next" => Some(Self::HistoryNext),
             "app.clear_input" => Some(Self::ClearInput),
@@ -221,6 +223,10 @@ mod tests {
     fn parses_key_spec_for_named_keys() {
         assert_eq!(key_spec_to_id("PageUp"), Some("pageup".to_string()));
         assert_eq!(key_spec_to_id("Esc"), Some("esc".to_string()));
+        assert_eq!(
+            key_spec_to_id("ctrl+backspace"),
+            Some("ctrl+backspace".to_string())
+        );
     }
 
     #[test]

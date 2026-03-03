@@ -71,6 +71,7 @@ Example:
 "esc" = "app.exit"
 "ctrl+c" = "app.exit"
 "ctrl+l" = "app.clear_input"
+"ctrl+backspace" = "app.delete_word_backward"
 "up" = "none"
 "down" = "none"
 ```
@@ -80,6 +81,7 @@ Built-in action IDs:
 - `app.exit`
 - `app.submit`
 - `app.backspace`
+- `app.delete_word_backward`
 - `history.prev`
 - `history.next`
 - `app.clear_input`

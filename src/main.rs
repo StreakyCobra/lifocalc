@@ -66,6 +66,7 @@ fn dispatch_action(key_event: KeyEvent, keybindings: &KeyBindings, app: &mut App
             Action::Exit => return true,
             Action::Submit => app.submit_input(),
             Action::Backspace => app.backspace(),
+            Action::DeleteWordBackward => app.delete_word_backward(),
             Action::HistoryPrev => app.history_up(),
             Action::HistoryNext => app.history_down(),
             Action::ClearInput => app.clear_input(),

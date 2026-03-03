@@ -54,6 +54,29 @@ impl App {
         self.status = None;
     }
 
+    pub fn delete_word_backward(&mut self) {
+        self.history_index = None;
+        self.status = None;
+
+        while self
+            .input
+            .chars()
+            .last()
+            .is_some_and(|character| character.is_whitespace())
+        {
+            self.input.pop();
+        }
+
+        while self
+            .input
+            .chars()
+            .last()
+            .is_some_and(|character| !character.is_whitespace())
+        {
+            self.input.pop();
+        }
+    }
+
     pub fn submit_input(&mut self) {
         let trimmed = self.input.trim();
         if trimmed.is_empty() {
@@ -183,5 +206,15 @@ mod tests {
         assert_eq!(app.input(), "3 4 +");
         app.history_down();
         assert_eq!(app.input(), "");
+    }
+
+    #[test]
+    fn delete_word_backward_removes_last_word() {
+        let mut app = App::new();
+        app.set_input("12 34  ");
+
+        app.delete_word_backward();
+
+        assert_eq!(app.input(), "12 ");
     }
 }
