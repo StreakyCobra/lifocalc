@@ -1,6 +1,5 @@
-description: "unknown operator keeps stack unchanged and reports error"
-before_stack: ["12", "34"]
-input: "foo"
-expected_after_stack: ["12", "34"]
-expected_after_input: "foo"
-expected_status: "unknown token: foo"
+description: "computes inline expression and pushes result to stack"
+before_stack: ["10"]
+input: "12 12 *"
+expected_after_stack: ["10", "144"]
+expected_after_input: ""

@@ -1,5 +1,5 @@
-description: "consumes two stack values and pushes result to stack"
-before_stack: ["3", "4"]
-input: "*"
-expected_after_stack: ["12"]
+description: "pushes multiple plain numbers into the global stack"
+before_stack: []
+input: "1 2 3"
+expected_after_stack: ["1", "2", "3"]
 expected_after_input: ""

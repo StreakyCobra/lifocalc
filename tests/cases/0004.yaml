@@ -1,5 +1,5 @@
-description: "computes inline expression and pushes result to stack"
-before_stack: ["10"]
-input: "12 12 *"
-expected_after_stack: ["10", "144"]
+description: "evaluates addition from two global stack values"
+before_stack: ["12", "34"]
+input: "+"
+expected_after_stack: ["46"]
 expected_after_input: ""

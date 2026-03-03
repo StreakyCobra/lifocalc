@@ -1,4 +1,4 @@
-description: "pushes an evaluated result number after expression step"
+description: "pushes a number when stack is already populated"
 before_stack: ["3", "4"]
 input: "12"
 expected_after_stack: ["3", "4", "12"]

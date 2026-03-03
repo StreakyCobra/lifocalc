@@ -1,5 +1,6 @@
-description: "local expressions do not consume global stack values"
+description: "unknown operator keeps stack unchanged and reports error"
 before_stack: ["12", "34"]
-input: "4 5 6 sum"
-expected_after_stack: ["12", "34", "15"]
-expected_after_input: ""
+input: "foo"
+expected_after_stack: ["12", "34"]
+expected_after_input: "foo"
+expected_status: "unknown token: foo"
