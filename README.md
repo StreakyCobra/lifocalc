@@ -8,7 +8,8 @@
 - Stack is bottom-aligned and reverse-numbered (`1:` is the last visible line).
 - `Enter` behavior:
   - numbers-only input pushes values to the global stack and clears input.
-  - expression input is evaluated against a prompt-local stack seeded from the global stack, then input is replaced with the result.
+  - operator-only input consumes values from the global stack, places the result in input, and leaves the stack without that result.
+  - expressions that include inline numbers are evaluated against a prompt-local stack seeded from the global stack, then input is replaced with the result.
 - History navigation with up/down arrows.
 - Live hint shown after the current input.
 - Inline status message for evaluation errors.

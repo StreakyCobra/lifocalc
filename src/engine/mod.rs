@@ -57,6 +57,30 @@ pub fn evaluate_expression(input: &str, base_stack: &[f64]) -> Result<f64, Engin
     stack.last().copied().ok_or(EngineError::EmptyInput)
 }
 
+pub fn evaluate_expression_in_place(input: &str, stack: &mut Vec<f64>) -> Result<f64, EngineError> {
+    let tokens = tokenize(input);
+    if tokens.is_empty() {
+        return Err(EngineError::EmptyInput);
+    }
+
+    for token in tokens {
+        if let Ok(number) = token.parse::<f64>() {
+            stack.push(number);
+            continue;
+        }
+
+        apply_operator(token, stack)?;
+    }
+
+    stack.last().copied().ok_or(EngineError::EmptyInput)
+}
+
+pub fn has_number_token(input: &str) -> bool {
+    tokenize(input)
+        .iter()
+        .any(|token| token.parse::<f64>().is_ok())
+}
+
 pub fn format_number(number: f64) -> String {
     number.to_string()
 }
@@ -120,5 +144,15 @@ mod tests {
         let result =
             evaluate_expression("*", &[3.0, 4.0]).expect("expected expression to evaluate");
         assert_eq!(result, 12.0);
+    }
+
+    #[test]
+    fn evaluates_in_place_and_mutates_stack() {
+        let mut stack = vec![3.0, 4.0];
+        let result = evaluate_expression_in_place("+", &mut stack)
+            .expect("expected expression to evaluate in place");
+
+        assert_eq!(result, 7.0);
+        assert_eq!(stack, vec![7.0]);
     }
 }

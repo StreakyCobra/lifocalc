@@ -56,6 +56,7 @@ fn render_input(frame: &mut Frame, app: &App, area: Rect) {
 
     let mut spans = vec![Span::raw(app.input().to_string())];
     if let Some(hint) = app.hint() {
+        spans.push(Span::raw("  "));
         spans.push(Span::styled(hint, Style::default().fg(Color::DarkGray)));
     }
 

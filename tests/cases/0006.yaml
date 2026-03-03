@@ -1,0 +1,5 @@
+description: "evaluates addition from two global stack values"
+before_stack: ["12", "34"]
+input: "+"
+expected_after_stack: []
+expected_after_input: "46"

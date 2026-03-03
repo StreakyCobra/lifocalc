@@ -74,8 +74,19 @@ impl App {
             return;
         }
 
-        match engine::evaluate_expression(&entry, &self.stack) {
+        let should_mutate_global_stack = !engine::has_number_token(&entry);
+
+        let result = if should_mutate_global_stack {
+            engine::evaluate_expression_in_place(&entry, &mut self.stack)
+        } else {
+            engine::evaluate_expression(&entry, &self.stack)
+        };
+
+        match result {
             Ok(value) => {
+                if should_mutate_global_stack {
+                    let _ = self.stack.pop();
+                }
                 self.input = engine::format_number(value);
                 self.status = None;
             }
@@ -158,7 +169,7 @@ mod tests {
     }
 
     #[test]
-    fn expression_updates_prompt_without_mutating_stack() {
+    fn operator_only_input_mutates_global_stack() {
         let mut app = App::new();
         app.set_stack(vec![3.0, 4.0]);
         app.set_input("*");
@@ -166,7 +177,19 @@ mod tests {
         app.submit_input();
 
         assert_eq!(app.input(), "12");
-        assert_eq!(app.stack(), &[3.0, 4.0]);
+        assert_eq!(app.stack(), &[]);
+    }
+
+    #[test]
+    fn inline_expression_keeps_global_stack_unchanged() {
+        let mut app = App::new();
+        app.set_stack(vec![10.0]);
+        app.set_input("12 12 *");
+
+        app.submit_input();
+
+        assert_eq!(app.input(), "144");
+        assert_eq!(app.stack(), &[10.0]);
     }
 
     #[test]
