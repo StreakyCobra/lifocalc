@@ -8,6 +8,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 struct YamlCase {
+    description: String,
     before_stack: Vec<String>,
     input: String,
     expected_after_stack: Vec<String>,
@@ -26,13 +27,14 @@ fn yaml_cases() {
     );
 
     for case_path in case_paths {
-        let case_name = case_path
+        let case_file = case_path
             .strip_prefix(manifest_dir())
             .unwrap_or(&case_path)
             .display()
             .to_string();
 
         let case = load_case(&case_path);
+        let case_name = format!("{case_file} ({})", case.description);
         run_case(&case_name, &case);
     }
 }

@@ -1,3 +1,4 @@
+description: "computes prompt-local expression with inline literals"
 before_stack: ["10"]
 input: "12 12 *"
 expected_after_stack: ["10"]

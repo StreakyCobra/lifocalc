@@ -23,10 +23,12 @@
 ## YAML test framework
 
 Test cases live in `tests/cases/*.yaml` and are executed by `tests/yaml_cases.rs`.
+Use numbered filenames (`0001.yaml`, `0002.yaml`, ...) and describe each case inside YAML.
 
 Each file defines one interaction step:
 
 ```yaml
+description: "evaluates multiplication from stack values"
 before_stack: ["3", "4"]
 input: "*"
 expected_after_stack: ["3", "4"]
@@ -46,5 +48,5 @@ All numeric values in YAML are strings to keep test files stable while the inter
 ### Add a new test
 
 1. Create a new `.yaml` file under `tests/cases/`.
-2. Fill in the four required fields.
+2. Fill in the required fields (`description`, `before_stack`, `input`, `expected_after_stack`, `expected_after_input`).
 3. Run `cargo test`.

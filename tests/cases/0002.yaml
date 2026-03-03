@@ -1,3 +1,4 @@
+description: "evaluates operator against global stack without mutating it"
 before_stack: ["3", "4"]
 input: "*"
 expected_after_stack: ["3", "4"]

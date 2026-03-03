@@ -1,3 +1,4 @@
+description: "pushes plain numbers into the global stack"
 before_stack: []
 input: "1 2 3"
 expected_after_stack: ["1", "2", "3"]

@@ -1,3 +1,4 @@
+description: "reports division by zero as inline status"
 before_stack: []
 input: "1 0 /"
 expected_after_stack: []
