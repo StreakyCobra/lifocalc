@@ -43,7 +43,12 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
 
     if let Some(store) = &history_store {
         match store.load_entries() {
-            Ok(entries) => app.set_history(entries),
+            Ok(entries) => {
+                app.set_history(entries.clone());
+                if let Err(error) = store.write_entries(&entries) {
+                    eprintln!("warning: {error}");
+                }
+            }
             Err(error) => eprintln!("warning: {error}"),
         }
     }
@@ -80,9 +85,11 @@ fn dispatch_action(
             Action::Exit => return true,
             Action::Evaluate => {
                 if let Some(entry) = app.submit_input() {
-                    if let Some(store) = history_store {
-                        if let Err(error) = store.append_entry(&entry) {
-                            eprintln!("warning: {error}");
+                    if app.status().is_none() {
+                        if let Some(store) = history_store {
+                            if let Err(error) = store.append_entry(&entry) {
+                                eprintln!("warning: {error}");
+                            }
                         }
                     }
                 }
