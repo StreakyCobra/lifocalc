@@ -2,6 +2,8 @@
 "enter" = "app.submit"
 "backspace" = "app.backspace"
 "ctrl+backspace" = "app.delete_word_backward"
+"ctrl+h" = "app.delete_word_backward"
+"ctrl+w" = "app.delete_word_backward"
 "ctrl+l" = "app.clear_input"
 "left" = "app.cursor_left"
 "right" = "app.cursor_right"

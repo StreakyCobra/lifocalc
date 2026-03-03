@@ -72,6 +72,8 @@ Example:
 "ctrl+c" = "app.exit"
 "ctrl+l" = "app.clear_input"
 "ctrl+backspace" = "app.delete_word_backward"
+"ctrl+h" = "app.delete_word_backward"
+"ctrl+w" = "app.delete_word_backward"
 "left" = "app.cursor_left"
 "right" = "app.cursor_right"
 "up" = "none"
