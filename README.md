@@ -22,6 +22,8 @@
 - `src/ui.rs`: ratatui rendering.
 - `src/main.rs`: terminal setup and event loop.
 
+The engine dispatches operators/functions through a registry with explicit arity (`Exact(n)` or `AtLeast(n)`), so adding new functions is mostly adding one function definition entry and one evaluator function.
+
 ## YAML test framework
 
 Test cases live in `tests/cases/*.yaml` and are executed by `tests/yaml_cases.rs`.

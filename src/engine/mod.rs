@@ -51,7 +51,7 @@ pub fn evaluate_expression(input: &str, base_stack: &[f64]) -> Result<f64, Engin
             continue;
         }
 
-        apply_operator(token, &mut stack)?;
+        apply_function(token, &mut stack)?;
     }
 
     stack.last().copied().ok_or(EngineError::EmptyInput)
@@ -69,7 +69,7 @@ pub fn evaluate_expression_in_place(input: &str, stack: &mut Vec<f64>) -> Result
             continue;
         }
 
-        apply_operator(token, stack)?;
+        apply_function(token, stack)?;
     }
 
     stack.last().copied().ok_or(EngineError::EmptyInput)
@@ -85,42 +85,61 @@ pub fn format_number(number: f64) -> String {
     number.to_string()
 }
 
-fn apply_operator(operator: &str, stack: &mut Vec<f64>) -> Result<(), EngineError> {
-    match operator {
-        "+" | "-" | "*" | "/" => {
-            let (lhs, rhs) = pop_two(stack)?;
-            let value = match operator {
-                "+" => lhs + rhs,
-                "-" => lhs - rhs,
-                "*" => lhs * rhs,
-                "/" => {
-                    if rhs == 0.0 {
-                        return Err(EngineError::DivisionByZero);
-                    }
+fn apply_function(name: &str, stack: &mut Vec<f64>) -> Result<(), EngineError> {
+    let Some(function) = find_function(name) else {
+        return Err(EngineError::UnknownToken(name.to_string()));
+    };
 
-                    lhs / rhs
-                }
-                _ => unreachable!("operator filtered by match arm"),
-            };
+    validate_arity(function.arity, stack.len())?;
+    (function.evaluate)(stack)
+}
 
-            stack.push(value);
-            Ok(())
+fn find_function(name: &str) -> Option<&'static FunctionDef> {
+    FUNCTIONS.iter().find(|function| function.name == name)
+}
+
+fn validate_arity(arity: Arity, available: usize) -> Result<(), EngineError> {
+    match arity {
+        Arity::Exact(needed) | Arity::AtLeast(needed) if available < needed => {
+            Err(EngineError::StackUnderflow { needed, available })
         }
-        "sum" => {
-            if stack.is_empty() {
-                return Err(EngineError::StackUnderflow {
-                    needed: 1,
-                    available: 0,
-                });
-            }
-
-            let value: f64 = stack.iter().sum();
-            stack.clear();
-            stack.push(value);
-            Ok(())
-        }
-        _ => Err(EngineError::UnknownToken(operator.to_string())),
+        _ => Ok(()),
     }
+}
+
+fn evaluate_add(stack: &mut Vec<f64>) -> Result<(), EngineError> {
+    let (lhs, rhs) = pop_two(stack)?;
+    stack.push(lhs + rhs);
+    Ok(())
+}
+
+fn evaluate_subtract(stack: &mut Vec<f64>) -> Result<(), EngineError> {
+    let (lhs, rhs) = pop_two(stack)?;
+    stack.push(lhs - rhs);
+    Ok(())
+}
+
+fn evaluate_multiply(stack: &mut Vec<f64>) -> Result<(), EngineError> {
+    let (lhs, rhs) = pop_two(stack)?;
+    stack.push(lhs * rhs);
+    Ok(())
+}
+
+fn evaluate_divide(stack: &mut Vec<f64>) -> Result<(), EngineError> {
+    let (lhs, rhs) = pop_two(stack)?;
+    if rhs == 0.0 {
+        return Err(EngineError::DivisionByZero);
+    }
+
+    stack.push(lhs / rhs);
+    Ok(())
+}
+
+fn evaluate_sum(stack: &mut Vec<f64>) -> Result<(), EngineError> {
+    let value: f64 = stack.iter().sum();
+    stack.clear();
+    stack.push(value);
+    Ok(())
 }
 
 fn pop_two(stack: &mut Vec<f64>) -> Result<(f64, f64), EngineError> {
@@ -139,6 +158,47 @@ fn pop_two(stack: &mut Vec<f64>) -> Result<(f64, f64), EngineError> {
         .expect("stack length checked before pop for lhs");
     Ok((lhs, rhs))
 }
+
+#[derive(Debug, Clone, Copy)]
+enum Arity {
+    Exact(usize),
+    AtLeast(usize),
+}
+
+#[derive(Debug, Clone, Copy)]
+struct FunctionDef {
+    name: &'static str,
+    arity: Arity,
+    evaluate: fn(&mut Vec<f64>) -> Result<(), EngineError>,
+}
+
+const FUNCTIONS: &[FunctionDef] = &[
+    FunctionDef {
+        name: "+",
+        arity: Arity::Exact(2),
+        evaluate: evaluate_add,
+    },
+    FunctionDef {
+        name: "-",
+        arity: Arity::Exact(2),
+        evaluate: evaluate_subtract,
+    },
+    FunctionDef {
+        name: "*",
+        arity: Arity::Exact(2),
+        evaluate: evaluate_multiply,
+    },
+    FunctionDef {
+        name: "/",
+        arity: Arity::Exact(2),
+        evaluate: evaluate_divide,
+    },
+    FunctionDef {
+        name: "sum",
+        arity: Arity::AtLeast(1),
+        evaluate: evaluate_sum,
+    },
+];
 
 #[cfg(test)]
 mod tests {
@@ -181,5 +241,18 @@ mod tests {
 
         assert_eq!(result, 12.0);
         assert_eq!(stack, vec![12.0]);
+    }
+
+    #[test]
+    fn sum_requires_non_empty_stack() {
+        let error = evaluate_expression_in_place("sum", &mut vec![])
+            .expect_err("expected sum on empty stack to fail");
+        assert_eq!(
+            error,
+            EngineError::StackUnderflow {
+                needed: 1,
+                available: 0
+            }
+        );
     }
 }
