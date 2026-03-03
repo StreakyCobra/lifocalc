@@ -117,7 +117,8 @@ mod tests {
 
     #[test]
     fn evaluates_rpn_expression_using_existing_stack_values() {
-        let result = evaluate_expression("*", &[3.0, 4.0]).expect("expected expression to evaluate");
+        let result =
+            evaluate_expression("*", &[3.0, 4.0]).expect("expected expression to evaluate");
         assert_eq!(result, 12.0);
     }
 }
