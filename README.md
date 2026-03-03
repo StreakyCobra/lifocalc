@@ -8,8 +8,8 @@
 - Stack is bottom-aligned and reverse-numbered (`1:` is the last visible line).
 - `Enter` behavior:
   - numbers-only input pushes values to the global stack and clears input.
-  - operator-only input consumes values from the global stack, places the result in input, and leaves the stack without that result.
-  - expressions that include inline numbers are evaluated against a prompt-local stack seeded from the global stack, then input is replaced with the result.
+  - operator-only input consumes values from the global stack and pushes the result back to the stack.
+  - expressions that include inline numbers are evaluated against a prompt-local stack seeded from the global stack, then the result is pushed to the global stack.
 - History navigation with up/down arrows.
 - Live hint shown after the current input.
 - Inline status message for evaluation errors.
@@ -33,8 +33,8 @@ Each file defines one interaction step:
 description: "evaluates multiplication from stack values"
 before_stack: ["3", "4"]
 input: "*"
-expected_after_stack: ["3", "4"]
-expected_after_input: "12"
+expected_after_stack: ["12"]
+expected_after_input: ""
 ```
 
 Optional:

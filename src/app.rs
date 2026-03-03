@@ -85,9 +85,11 @@ impl App {
         match result {
             Ok(value) => {
                 if should_mutate_global_stack {
-                    let _ = self.stack.pop();
+                    self.input.clear();
+                } else {
+                    self.stack.push(value);
+                    self.input.clear();
                 }
-                self.input = engine::format_number(value);
                 self.status = None;
             }
             Err(error) => {

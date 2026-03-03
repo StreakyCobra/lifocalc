@@ -1,5 +1,5 @@
-description: "consumes two stack values and leaves result in input"
+description: "consumes two stack values and pushes result to stack"
 before_stack: ["3", "4"]
 input: "*"
-expected_after_stack: []
-expected_after_input: "12"
+expected_after_stack: ["12"]
+expected_after_input: ""

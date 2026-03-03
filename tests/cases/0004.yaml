@@ -1,5 +1,5 @@
-description: "computes prompt-local expression with inline literals"
+description: "computes inline expression and pushes result to stack"
 before_stack: ["10"]
 input: "12 12 *"
-expected_after_stack: ["10"]
-expected_after_input: "144"
+expected_after_stack: ["10", "144"]
+expected_after_input: ""
