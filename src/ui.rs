@@ -46,7 +46,10 @@ fn render_input(frame: &mut Frame, app: &App, area: Rect) {
     let title = match app.status() {
         Some(status) => Line::from(vec![
             Span::raw("Input "),
-            Span::styled(status.to_string(), Style::default().fg(Color::Red)),
+            Span::styled(
+                format!("[ {} ]", format_status(status)),
+                Style::default().fg(Color::Red),
+            ),
         ]),
         None => Line::from("Input"),
     };
@@ -66,5 +69,13 @@ fn render_input(frame: &mut Frame, app: &App, area: Rect) {
         let max_offset = inner.width.saturating_sub(1) as usize;
         let cursor_offset = app.input().chars().count().min(max_offset) as u16;
         frame.set_cursor_position((inner.x + cursor_offset, inner.y));
+    }
+}
+
+fn format_status(status: &str) -> String {
+    let mut chars = status.chars();
+    match chars.next() {
+        Some(first) => format!("{}{}", first.to_ascii_uppercase(), chars.as_str()),
+        None => String::new(),
     }
 }
