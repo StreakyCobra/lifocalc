@@ -1,0 +1,5 @@
+description: "local expressions do not consume global stack values"
+before_stack: ["12", "34"]
+input: "4 5 6 sum"
+expected_after_stack: ["12", "34", "15"]
+expected_after_input: ""

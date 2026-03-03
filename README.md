@@ -9,7 +9,7 @@
 - `Enter` behavior:
   - numbers-only input pushes values to the global stack and clears input.
   - operator-only input consumes values from the global stack and pushes the result back to the stack.
-  - expressions that include inline numbers are evaluated against a prompt-local stack seeded from the global stack, then the result is pushed to the global stack.
+  - expressions that include inline numbers are evaluated against an independent prompt-local stack, then the result is pushed to the global stack.
 - History navigation with up/down arrows.
 - Live hint shown after the current input.
 - Inline status message for evaluation errors.

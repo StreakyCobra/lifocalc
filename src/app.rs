@@ -142,7 +142,7 @@ impl App {
         let result = if should_mutate_global_stack {
             engine::evaluate_expression_in_place(&entry, &mut candidate_stack)
         } else {
-            engine::evaluate_expression(&entry, &self.stack)
+            engine::evaluate_expression(&entry, &[])
         };
 
         match result {
@@ -211,9 +211,15 @@ impl App {
             return Some(trimmed.to_string());
         }
 
-        engine::evaluate_expression(trimmed, &self.stack)
-            .ok()
-            .map(engine::format_number)
+        if engine::has_number_token(trimmed) {
+            engine::evaluate_expression(trimmed, &[])
+                .ok()
+                .map(engine::format_number)
+        } else {
+            engine::evaluate_expression(trimmed, &self.stack)
+                .ok()
+                .map(engine::format_number)
+        }
     }
 
     pub fn stack_as_strings(&self) -> Vec<String> {
