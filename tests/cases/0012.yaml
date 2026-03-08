@@ -1,0 +1,8 @@
+description: "supports arbitrarily large integer arithmetic"
+before_stack:
+  - "123456789012345678901234567890"
+  - "987654321098765432109876543210"
+input: "+"
+expected_after_stack:
+  - "1111111110111111111011111111100"
+expected_after_input: ""

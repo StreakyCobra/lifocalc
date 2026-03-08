@@ -16,6 +16,7 @@
 - Live hint shown after the current input.
 - Inline status message for evaluation errors.
 - Supported operators in this boilerplate: `+`, `-`, `*`, `/`, `sum`.
+- Numeric values are exact rationals internally. Inputs like `0.125`, `1e3`, and `10/6` are accepted and rendered canonically, for example `1/8`, `1000`, and `5/3`.
 
 ## Project layout
 

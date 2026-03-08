@@ -1,0 +1,6 @@
+description: "renders exact rational results from decimal input"
+before_stack: []
+input: "0.1 0.2 +"
+expected_after_stack:
+  - "3/10"
+expected_after_input: ""

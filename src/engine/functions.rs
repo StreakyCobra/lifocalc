@@ -1,4 +1,6 @@
-use super::EngineError;
+use num_traits::Zero;
+
+use super::{EngineError, Number};
 
 #[derive(Debug, Clone, Copy)]
 enum Arity {
@@ -10,7 +12,7 @@ enum Arity {
 struct FunctionDef {
     name: &'static str,
     arity: Arity,
-    evaluate: fn(&mut Vec<f64>) -> Result<(), EngineError>,
+    evaluate: fn(&mut Vec<Number>) -> Result<(), EngineError>,
 }
 
 const FUNCTIONS: &[FunctionDef] = &[
@@ -41,7 +43,7 @@ const FUNCTIONS: &[FunctionDef] = &[
     },
 ];
 
-pub(super) fn execute_function(name: &str, stack: &mut Vec<f64>) -> Result<(), EngineError> {
+pub(super) fn execute_function(name: &str, stack: &mut Vec<Number>) -> Result<(), EngineError> {
     let Some(function) = FUNCTIONS.iter().find(|function| function.name == name) else {
         return Err(EngineError::UnknownToken(name.to_string()));
     };
@@ -59,27 +61,27 @@ fn validate_arity(arity: Arity, available: usize) -> Result<(), EngineError> {
     }
 }
 
-fn evaluate_add(stack: &mut Vec<f64>) -> Result<(), EngineError> {
+fn evaluate_add(stack: &mut Vec<Number>) -> Result<(), EngineError> {
     let (lhs, rhs) = pop_two(stack)?;
     stack.push(lhs + rhs);
     Ok(())
 }
 
-fn evaluate_subtract(stack: &mut Vec<f64>) -> Result<(), EngineError> {
+fn evaluate_subtract(stack: &mut Vec<Number>) -> Result<(), EngineError> {
     let (lhs, rhs) = pop_two(stack)?;
     stack.push(lhs - rhs);
     Ok(())
 }
 
-fn evaluate_multiply(stack: &mut Vec<f64>) -> Result<(), EngineError> {
+fn evaluate_multiply(stack: &mut Vec<Number>) -> Result<(), EngineError> {
     let (lhs, rhs) = pop_two(stack)?;
     stack.push(lhs * rhs);
     Ok(())
 }
 
-fn evaluate_divide(stack: &mut Vec<f64>) -> Result<(), EngineError> {
+fn evaluate_divide(stack: &mut Vec<Number>) -> Result<(), EngineError> {
     let (lhs, rhs) = pop_two(stack)?;
-    if rhs == 0.0 {
+    if rhs.is_zero() {
         return Err(EngineError::DivisionByZero);
     }
 
@@ -87,14 +89,14 @@ fn evaluate_divide(stack: &mut Vec<f64>) -> Result<(), EngineError> {
     Ok(())
 }
 
-fn evaluate_sum(stack: &mut Vec<f64>) -> Result<(), EngineError> {
-    let value: f64 = stack.iter().sum();
+fn evaluate_sum(stack: &mut Vec<Number>) -> Result<(), EngineError> {
+    let value = stack.iter().cloned().fold(Number::zero(), |acc, value| acc + value);
     stack.clear();
     stack.push(value);
     Ok(())
 }
 
-fn pop_two(stack: &mut Vec<f64>) -> Result<(f64, f64), EngineError> {
+fn pop_two(stack: &mut Vec<Number>) -> Result<(Number, Number), EngineError> {
     if stack.len() < 2 {
         return Err(EngineError::StackUnderflow {
             needed: 2,

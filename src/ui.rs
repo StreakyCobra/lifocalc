@@ -33,7 +33,7 @@ fn render_stack(frame: &mut Frame, app: &App, area: Rect) {
                 format!("{line_number}: "),
                 Style::default().fg(Color::DarkGray),
             ),
-            Span::raw(engine::format_number(*value)),
+            Span::raw(engine::format_number(value)),
         ]));
     }
 

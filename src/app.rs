@@ -4,7 +4,7 @@ use crate::engine;
 pub struct App {
     input: String,
     cursor: usize,
-    stack: Vec<f64>,
+    stack: Vec<engine::Number>,
     history: Vec<String>,
     history_index: Option<usize>,
     status: Option<String>,
@@ -23,11 +23,11 @@ impl App {
         self.cursor
     }
 
-    pub fn stack(&self) -> &[f64] {
+    pub fn stack(&self) -> &[engine::Number] {
         &self.stack
     }
 
-    pub fn set_stack(&mut self, stack: Vec<f64>) {
+    pub fn set_stack(&mut self, stack: Vec<engine::Number>) {
         self.stack = stack;
     }
 
@@ -215,24 +215,30 @@ impl App {
         }
 
         if engine::is_numbers_only(trimmed) {
-            return Some(trimmed.to_string());
+            return engine::parse_numbers(trimmed).ok().map(|numbers| {
+                numbers
+                    .iter()
+                    .map(engine::format_number)
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            });
         }
 
         if engine::has_number_token(trimmed) {
             engine::evaluate_expression(trimmed, &[])
                 .ok()
-                .map(engine::format_number)
+                .map(|number| engine::format_number(&number))
         } else {
             engine::evaluate_expression(trimmed, &self.stack)
                 .ok()
-                .map(engine::format_number)
+                .map(|number| engine::format_number(&number))
         }
     }
 
     pub fn stack_as_strings(&self) -> Vec<String> {
         self.stack
             .iter()
-            .map(|value| engine::format_number(*value))
+            .map(engine::format_number)
             .collect()
     }
 
@@ -275,6 +281,7 @@ fn byte_index_for_char(input: &str, char_index: usize) -> usize {
 #[cfg(test)]
 mod tests {
     use super::App;
+    use crate::engine;
 
     #[test]
     fn history_navigation_round_trips_to_empty_input() {
@@ -325,5 +332,25 @@ mod tests {
         app.insert_char('x');
 
         assert_eq!(app.input(), "1x2");
+    }
+
+    #[test]
+    fn numbers_only_hint_uses_exact_formatting() {
+        let mut app = App::new();
+        app.set_input("0.125 10/6");
+
+        assert_eq!(app.hint(), Some("1/8 5/3".to_string()));
+    }
+
+    #[test]
+    fn operator_hint_uses_exact_fraction_result() {
+        let mut app = App::new();
+        app.set_stack(vec![
+            engine::parse_number("1").expect("expected valid number"),
+            engine::parse_number("3").expect("expected valid number"),
+        ]);
+        app.set_input("/");
+
+        assert_eq!(app.hint(), Some("1/3".to_string()));
     }
 }

@@ -70,7 +70,7 @@ fn load_case(path: &Path) -> datatest_stable::Result<YamlCase> {
         .map_err(|error| format!("failed to parse {}: {error}", path.display()).into())
 }
 
-fn parse_stack(values: &[String]) -> Result<Vec<f64>, EngineError> {
+fn parse_stack(values: &[String]) -> Result<Vec<engine::Number>, EngineError> {
     values
         .iter()
         .map(|value| engine::parse_number(value))
