@@ -16,6 +16,37 @@ fn input_hint_style() -> Style {
     Style::default().fg(Color::Red)
 }
 
+fn input_hint_spans(hint: &[crate::app::HintToken]) -> Vec<Span<'static>> {
+    let mut spans = Vec::new();
+
+    for (index, token) in hint.iter().enumerate() {
+        if index > 0 {
+            spans.push(Span::raw(" "));
+        }
+
+        spans.push(Span::styled(token.primary.clone(), input_hint_style()));
+    }
+
+    if hint.iter().any(|token| token.approximation.is_some()) {
+        spans.push(Span::styled(" | ", input_hint_style()));
+
+        for (index, token) in hint.iter().enumerate() {
+            if index > 0 {
+                spans.push(Span::raw(" "));
+            }
+
+            spans.push(Span::styled(
+                token.approximation
+                    .clone()
+                    .unwrap_or_else(|| token.primary.clone()),
+                input_hint_style(),
+            ));
+        }
+    }
+
+    spans
+}
+
 pub fn draw(frame: &mut Frame, app: &App) {
     let sections = Layout::default()
         .direction(Direction::Vertical)
@@ -77,23 +108,7 @@ fn render_input(frame: &mut Frame, app: &App, area: Rect) {
     let mut spans = vec![Span::raw(app.input().to_string())];
     if let Some(hint) = app.hint() {
         spans.push(Span::raw("  "));
-        for (index, token) in hint.iter().enumerate() {
-            if index > 0 {
-                spans.push(Span::raw(" "));
-            }
-
-            spans.push(Span::styled(
-                token.primary.clone(),
-                input_hint_style(),
-            ));
-
-            if let Some(approximation) = &token.approximation {
-                spans.push(Span::styled(
-                    format!(" | {approximation}"),
-                    input_hint_style(),
-                ));
-            }
-        }
+        spans.extend(input_hint_spans(&hint));
     }
 
     frame.render_widget(Paragraph::new(Line::from(spans)).block(block), area);
@@ -102,5 +117,32 @@ fn render_input(frame: &mut Frame, app: &App, area: Rect) {
         let max_offset = inner.width.saturating_sub(1) as usize;
         let cursor_offset = app.cursor().min(max_offset) as u16;
         frame.set_cursor_position((inner.x + cursor_offset, inner.y));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::input_hint_spans;
+    use crate::app::HintToken;
+
+    #[test]
+    fn groups_input_hint_approximations_after_all_primary_tokens() {
+        let spans = input_hint_spans(&[
+            HintToken {
+                primary: "1/10".to_string(),
+                approximation: Some("0.1f".to_string()),
+            },
+            HintToken {
+                primary: "0.2f".to_string(),
+                approximation: None,
+            },
+        ]);
+
+        let rendered = spans
+            .into_iter()
+            .map(|span| span.content.into_owned())
+            .collect::<String>();
+
+        assert_eq!(rendered, "1/10 0.2f | 0.1f 0.2f");
     }
 }
