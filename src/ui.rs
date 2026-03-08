@@ -8,6 +8,10 @@ use ratatui::{
 
 use crate::{app::App, engine};
 
+fn hint_style() -> Style {
+    Style::default().fg(Color::Gray)
+}
+
 pub fn draw(frame: &mut Frame, app: &App) {
     let sections = Layout::default()
         .direction(Direction::Vertical)
@@ -40,8 +44,8 @@ fn render_stack(frame: &mut Frame, app: &App, area: Rect) {
         if app.display_config().approximation_hint.stack {
             if let Some(approximation) = formatted.approximation {
                 spans.push(Span::styled(
-                    format!(" | {approximation}"),
-                    Style::default().fg(Color::DarkGray),
+                    format!("  | {approximation}"),
+                    hint_style(),
                 ));
             }
         }
@@ -76,13 +80,13 @@ fn render_input(frame: &mut Frame, app: &App, area: Rect) {
 
             spans.push(Span::styled(
                 token.primary.clone(),
-                Style::default().fg(Color::DarkGray),
+                hint_style(),
             ));
 
             if let Some(approximation) = &token.approximation {
                 spans.push(Span::styled(
                     format!(" | {approximation}"),
-                    Style::default().fg(Color::DarkGray),
+                    hint_style(),
                 ));
             }
         }
