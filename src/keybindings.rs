@@ -1,9 +1,7 @@
-use std::{collections::HashMap, env, fs, path::PathBuf};
+use std::collections::HashMap;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use serde::Deserialize;
-
-const DEFAULT_CONFIG_TOML: &str = include_str!("../config/default-config.toml");
+use crate::config::load_config_layers;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Action {
@@ -35,11 +33,6 @@ impl Action {
     }
 }
 
-#[derive(Debug, Deserialize)]
-struct ConfigFile {
-    keybindings: Option<HashMap<String, String>>,
-}
-
 #[derive(Debug, Default)]
 pub struct KeyBindings {
     actions_by_key: HashMap<String, Action>,
@@ -48,26 +41,8 @@ pub struct KeyBindings {
 impl KeyBindings {
     pub fn load() -> Self {
         let mut actions_by_key = HashMap::new();
-        let default_config = parse_config(DEFAULT_CONFIG_TOML, "embedded default config");
-        apply_bindings(
-            &mut actions_by_key,
-            default_config.keybindings,
-            "embedded default",
-        );
-
-        if let Some(path) = user_config_path() {
-            if path.exists() {
-                match fs::read_to_string(&path) {
-                    Ok(content) => {
-                        let source = path.display().to_string();
-                        let user_config = parse_config(&content, &source);
-                        apply_bindings(&mut actions_by_key, user_config.keybindings, &source);
-                    }
-                    Err(error) => {
-                        eprintln!("warning: failed to read {}: {error}", path.display());
-                    }
-                }
-            }
+        for (config, source) in load_config_layers() {
+            apply_bindings(&mut actions_by_key, config.keybindings, &source);
         }
 
         Self { actions_by_key }
@@ -75,16 +50,6 @@ impl KeyBindings {
 
     pub fn action_for_event(&self, key_event: KeyEvent) -> Option<Action> {
         key_event_to_id(key_event).and_then(|id| self.actions_by_key.get(&id).copied())
-    }
-}
-
-fn parse_config(content: &str, source: &str) -> ConfigFile {
-    match toml::from_str::<ConfigFile>(content) {
-        Ok(config) => config,
-        Err(error) => {
-            eprintln!("warning: failed to parse {source}: {error}");
-            ConfigFile { keybindings: None }
-        }
     }
 }
 
@@ -207,15 +172,6 @@ fn compose_key_id(base: String, modifiers: KeyModifiers) -> String {
     }
 
     format!("{}+{base}", prefixes.join("+"))
-}
-
-fn user_config_path() -> Option<PathBuf> {
-    if let Some(config_home) = env::var_os("XDG_CONFIG_HOME") {
-        return Some(PathBuf::from(config_home).join("lifocalc/config.toml"));
-    }
-
-    let home = env::var_os("HOME")?;
-    Some(PathBuf::from(home).join(".config/lifocalc/config.toml"))
 }
 
 #[cfg(test)]

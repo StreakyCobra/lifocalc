@@ -12,3 +12,7 @@
 "esc" = "app.exit"
 "ctrl+c" = "app.exit"
 "ctrl+d" = "app.exit"
+
+[display.approximation_hint]
+stack = true
+input = true
