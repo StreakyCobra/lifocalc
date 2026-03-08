@@ -1,0 +1,6 @@
+description: "mixed arithmetic degrades to approximate"
+before_stack: []
+input: "1/2 0.5f +"
+expected_after_stack:
+  - "1f"
+expected_after_input: ""

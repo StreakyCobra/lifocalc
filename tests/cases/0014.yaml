@@ -1,0 +1,6 @@
+description: "converts exact fraction to approximate with tilde"
+before_stack: []
+input: "1 2 / ~"
+expected_after_stack:
+  - "0.5f"
+expected_after_input: ""

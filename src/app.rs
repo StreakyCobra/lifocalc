@@ -353,4 +353,21 @@ mod tests {
 
         assert_eq!(app.hint(), Some("1/3".to_string()));
     }
+
+    #[test]
+    fn numbers_only_hint_preserves_approximate_literals() {
+        let mut app = App::new();
+        app.set_input("1 0.5f");
+
+        assert_eq!(app.hint(), Some("1 0.5f".to_string()));
+    }
+
+    #[test]
+    fn operator_hint_shows_approximate_result() {
+        let mut app = App::new();
+        app.set_stack(vec![engine::parse_number("2").expect("expected valid number")]);
+        app.set_input("sqrt");
+
+        assert_eq!(app.hint(), Some("1.4142135623730951f".to_string()));
+    }
 }

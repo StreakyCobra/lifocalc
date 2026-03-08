@@ -40,6 +40,7 @@ fn evaluate_tokens(tokens: Vec<&str>, stack: &mut Vec<Number>) -> Result<(), Eng
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::format_number;
 
     fn number(token: &str) -> Number {
         parse::parse_number(token).expect("expected valid number")
@@ -95,5 +96,29 @@ mod tests {
     fn evaluates_fraction_result_exactly() {
         let result = evaluate_expression("1 3 /", &[]).expect("expected fraction to evaluate");
         assert_eq!(result, number("1/3"));
+    }
+
+    #[test]
+    fn degrades_mixed_arithmetic_to_approximate() {
+        let result = evaluate_expression("1/2 0.5f +", &[]).expect("expected mixed expression");
+        assert_eq!(format_number(&result), "1f");
+    }
+
+    #[test]
+    fn converts_exact_value_to_approximate() {
+        let result = evaluate_expression("1 2 / ~", &[]).expect("expected conversion");
+        assert_eq!(format_number(&result), "0.5f");
+    }
+
+    #[test]
+    fn applies_sqrt_as_approximate_operator() {
+        let result = evaluate_expression("2 sqrt", &[]).expect("expected sqrt to evaluate");
+        assert_eq!(format_number(&result), "1.4142135623730951f");
+    }
+
+    #[test]
+    fn rejects_invalid_approximate_operation() {
+        let error = evaluate_expression("-1 sqrt", &[]).expect_err("expected sqrt to fail");
+        assert_eq!(error, EngineError::InvalidApproximateOperation("sqrt"));
     }
 }

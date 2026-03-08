@@ -1,0 +1,6 @@
+description: "approximate literal pushes onto global stack"
+before_stack: []
+input: "0.5f"
+expected_after_stack:
+  - "0.5f"
+expected_after_input: ""

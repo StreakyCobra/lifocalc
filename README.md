@@ -16,7 +16,11 @@
 - Live hint shown after the current input.
 - Inline status message for evaluation errors.
 - Supported operators in this boilerplate: `+`, `-`, `*`, `/`, `sum`.
-- Numeric values are exact rationals internally. Inputs like `0.125`, `1e3`, and `10/6` are accepted and rendered canonically, for example `1/8`, `1000`, and `5/3`.
+- Numeric values support exact and approximate modes:
+  - exact inputs like `0.125`, `1e3`, and `10/6` are rendered canonically as `1/8`, `1000`, and `5/3`
+  - approximate inputs use an `f` suffix, such as `0.5f` or `1e-3f`
+  - `~` converts an exact value to approximate, for example `1 2 / ~` -> `0.5f`
+  - `sqrt`, `ln`, `exp`, `sin`, `cos`, and `tan` run in approximate mode and return `f`-suffixed values
 
 ## Project layout
 

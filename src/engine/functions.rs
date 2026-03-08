@@ -1,5 +1,3 @@
-use num_traits::Zero;
-
 use super::{EngineError, Number};
 
 #[derive(Debug, Clone, Copy)]
@@ -41,6 +39,41 @@ const FUNCTIONS: &[FunctionDef] = &[
         arity: Arity::AtLeast(1),
         evaluate: evaluate_sum,
     },
+    FunctionDef {
+        name: "~",
+        arity: Arity::Exact(1),
+        evaluate: evaluate_approximate,
+    },
+    FunctionDef {
+        name: "sqrt",
+        arity: Arity::Exact(1),
+        evaluate: evaluate_sqrt,
+    },
+    FunctionDef {
+        name: "ln",
+        arity: Arity::Exact(1),
+        evaluate: evaluate_ln,
+    },
+    FunctionDef {
+        name: "exp",
+        arity: Arity::Exact(1),
+        evaluate: evaluate_exp,
+    },
+    FunctionDef {
+        name: "sin",
+        arity: Arity::Exact(1),
+        evaluate: evaluate_sin,
+    },
+    FunctionDef {
+        name: "cos",
+        arity: Arity::Exact(1),
+        evaluate: evaluate_cos,
+    },
+    FunctionDef {
+        name: "tan",
+        arity: Arity::Exact(1),
+        evaluate: evaluate_tan,
+    },
 ];
 
 pub(super) fn execute_function(name: &str, stack: &mut Vec<Number>) -> Result<(), EngineError> {
@@ -63,36 +96,78 @@ fn validate_arity(arity: Arity, available: usize) -> Result<(), EngineError> {
 
 fn evaluate_add(stack: &mut Vec<Number>) -> Result<(), EngineError> {
     let (lhs, rhs) = pop_two(stack)?;
-    stack.push(lhs + rhs);
+    stack.push(Number::add(lhs, rhs)?);
     Ok(())
 }
 
 fn evaluate_subtract(stack: &mut Vec<Number>) -> Result<(), EngineError> {
     let (lhs, rhs) = pop_two(stack)?;
-    stack.push(lhs - rhs);
+    stack.push(Number::subtract(lhs, rhs)?);
     Ok(())
 }
 
 fn evaluate_multiply(stack: &mut Vec<Number>) -> Result<(), EngineError> {
     let (lhs, rhs) = pop_two(stack)?;
-    stack.push(lhs * rhs);
+    stack.push(Number::multiply(lhs, rhs)?);
     Ok(())
 }
 
 fn evaluate_divide(stack: &mut Vec<Number>) -> Result<(), EngineError> {
     let (lhs, rhs) = pop_two(stack)?;
-    if rhs.is_zero() {
-        return Err(EngineError::DivisionByZero);
-    }
-
-    stack.push(lhs / rhs);
+    stack.push(Number::divide(lhs, rhs)?);
     Ok(())
 }
 
 fn evaluate_sum(stack: &mut Vec<Number>) -> Result<(), EngineError> {
-    let value = stack.iter().cloned().fold(Number::zero(), |acc, value| acc + value);
-    stack.clear();
+    let mut values = std::mem::take(stack).into_iter();
+    let first = values.next().ok_or(EngineError::StackUnderflow {
+        needed: 1,
+        available: 0,
+    })?;
+    let value = values.try_fold(first, Number::add)?;
     stack.push(value);
+    Ok(())
+}
+
+fn evaluate_approximate(stack: &mut Vec<Number>) -> Result<(), EngineError> {
+    let value = pop_one(stack)?;
+    stack.push(value.approximate()?);
+    Ok(())
+}
+
+fn evaluate_sqrt(stack: &mut Vec<Number>) -> Result<(), EngineError> {
+    let value = pop_one(stack)?;
+    stack.push(value.unary_float_op("sqrt", f64::sqrt)?);
+    Ok(())
+}
+
+fn evaluate_ln(stack: &mut Vec<Number>) -> Result<(), EngineError> {
+    let value = pop_one(stack)?;
+    stack.push(value.unary_float_op("ln", f64::ln)?);
+    Ok(())
+}
+
+fn evaluate_exp(stack: &mut Vec<Number>) -> Result<(), EngineError> {
+    let value = pop_one(stack)?;
+    stack.push(value.unary_float_op("exp", f64::exp)?);
+    Ok(())
+}
+
+fn evaluate_sin(stack: &mut Vec<Number>) -> Result<(), EngineError> {
+    let value = pop_one(stack)?;
+    stack.push(value.unary_float_op("sin", f64::sin)?);
+    Ok(())
+}
+
+fn evaluate_cos(stack: &mut Vec<Number>) -> Result<(), EngineError> {
+    let value = pop_one(stack)?;
+    stack.push(value.unary_float_op("cos", f64::cos)?);
+    Ok(())
+}
+
+fn evaluate_tan(stack: &mut Vec<Number>) -> Result<(), EngineError> {
+    let value = pop_one(stack)?;
+    stack.push(value.unary_float_op("tan", f64::tan)?);
     Ok(())
 }
 
@@ -111,4 +186,11 @@ fn pop_two(stack: &mut Vec<Number>) -> Result<(Number, Number), EngineError> {
         .pop()
         .expect("stack length checked before pop for lhs");
     Ok((lhs, rhs))
+}
+
+fn pop_one(stack: &mut Vec<Number>) -> Result<Number, EngineError> {
+    stack.pop().ok_or(EngineError::StackUnderflow {
+        needed: 1,
+        available: 0,
+    })
 }

@@ -6,6 +6,12 @@ pub enum EngineError {
     EmptyInput,
     #[error("invalid number: {0}")]
     InvalidNumber(String),
+    #[error("cannot convert exact value to approximate")]
+    ApproximateConversionFailed,
+    #[error("invalid approximate result")]
+    InvalidApproximateResult,
+    #[error("invalid approximate operation: {0}")]
+    InvalidApproximateOperation(&'static str),
     #[error("unknown token: {0}")]
     UnknownToken(String),
     #[error("stack underflow: need {needed}, have {available}")]

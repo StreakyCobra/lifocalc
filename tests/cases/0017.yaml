@@ -1,0 +1,6 @@
+description: "sqrt auto-converts exact input and returns approximate"
+before_stack: []
+input: "2 sqrt"
+expected_after_stack:
+  - "1.4142135623730951f"
+expected_after_input: ""

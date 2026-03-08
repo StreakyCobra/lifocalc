@@ -34,6 +34,10 @@ fn parse_number_impl(token: &str) -> Option<Number> {
         return None;
     }
 
+    if let Some(number) = parse_approximate(token) {
+        return Some(number);
+    }
+
     if let Some(number) = parse_fraction(token) {
         return Some(number);
     }
@@ -57,7 +61,7 @@ fn parse_fraction(token: &str) -> Option<Number> {
         return None;
     }
 
-    Some(BigRational::new(numerator, denominator))
+    Some(Number::from_exact(BigRational::new(numerator, denominator)))
 }
 
 fn parse_decimal_or_scientific(token: &str) -> Option<Number> {
@@ -109,10 +113,20 @@ fn parse_decimal_or_scientific(token: &str) -> Option<Number> {
     let scale = fractional_part.len() as i64 - exponent as i64;
     if scale >= 0 {
         let denominator = number::pow10(scale as usize);
-        Some(BigRational::new(numerator, denominator))
+        Some(Number::from_exact(BigRational::new(numerator, denominator)))
     } else {
         numerator *= number::pow10((-scale) as usize);
-        Some(BigRational::from_integer(numerator))
+        Some(Number::from_exact(BigRational::from_integer(numerator)))
+    }
+}
+
+fn parse_approximate(token: &str) -> Option<Number> {
+    let body = token.strip_suffix('f')?;
+    let value = body.parse::<f64>().ok()?;
+    if value.is_finite() {
+        Some(Number::Approx(value))
+    } else {
+        None
     }
 }
 
@@ -167,6 +181,12 @@ mod tests {
     }
 
     #[test]
+    fn parses_approximate_literal_with_suffix() {
+        let number = parse_number("0.125f").expect("expected approximate literal to parse");
+        assert_eq!(format_number(&number), "0.125f");
+    }
+
+    #[test]
     fn parses_fraction_and_reduces() {
         let number = parse_number("10/6").expect("expected fraction to parse");
         assert_eq!(format_number(&number), "5/3");
@@ -182,5 +202,11 @@ mod tests {
     fn rejects_non_finite_values() {
         let error = parse_number("NaN").expect_err("expected NaN to fail");
         assert_eq!(error, EngineError::InvalidNumber("NaN".to_string()));
+    }
+
+    #[test]
+    fn rejects_non_finite_approximate_values() {
+        let error = parse_number("inff").expect_err("expected infinity to fail");
+        assert_eq!(error, EngineError::InvalidNumber("inff".to_string()));
     }
 }
