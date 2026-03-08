@@ -8,8 +8,12 @@ use ratatui::{
 
 use crate::{app::App, engine};
 
-fn hint_style() -> Style {
-    Style::default().fg(Color::Gray)
+fn stack_hint_style() -> Style {
+    Style::default().fg(Color::Rgb(170, 170, 170))
+}
+
+fn input_hint_style() -> Style {
+    Style::default().fg(Color::Red)
 }
 
 pub fn draw(frame: &mut Frame, app: &App) {
@@ -45,7 +49,7 @@ fn render_stack(frame: &mut Frame, app: &App, area: Rect) {
             if let Some(approximation) = formatted.approximation {
                 spans.push(Span::styled(
                     format!("  | {approximation}"),
-                    hint_style(),
+                    stack_hint_style(),
                 ));
             }
         }
@@ -80,13 +84,13 @@ fn render_input(frame: &mut Frame, app: &App, area: Rect) {
 
             spans.push(Span::styled(
                 token.primary.clone(),
-                hint_style(),
+                input_hint_style(),
             ));
 
             if let Some(approximation) = &token.approximation {
                 spans.push(Span::styled(
                     format!(" | {approximation}"),
-                    hint_style(),
+                    input_hint_style(),
                 ));
             }
         }
