@@ -1,0 +1,11 @@
+description: "shows exact operator result hint with approximation before submission"
+before_stack:
+  - "1"
+  - "3"
+input: "/"
+expected_before_hint:
+  - primary: "1/3"
+    approximation: "0.3333333333333333f"
+expected_after_stack:
+  - "1/3"
+expected_after_input: ""

@@ -14,6 +14,7 @@
 - Input history is persisted across app restarts in `${XDG_STATE_HOME}/lifocalc/history`, or `~/.local/state/lifocalc/history` when `XDG_STATE_HOME` is unset.
 - Persisted history entries are de-duplicated, and expressions that fail evaluation are not written to the history file.
 - Live hint shown after the current input.
+- Exact values can show a gray approximate `| ...f` suffix in the stack and live input hint.
 - Inline status message for evaluation errors.
 - Supported operators in this boilerplate: `+`, `-`, `*`, `/`, `sum`.
 - Numeric values support exact and approximate modes:
@@ -53,6 +54,12 @@ Optional:
 expected_status: "division by zero"
 ```
 
+```yaml
+expected_before_hint:
+  - primary: "1/3"
+    approximation: "0.3333333333333333f"
+```
+
 ### Why strings for numbers?
 
 All numeric values in YAML are strings to keep test files stable while the internal numeric representation evolves (for example from `f64` to a custom numeric type).
@@ -61,20 +68,25 @@ All numeric values in YAML are strings to keep test files stable while the inter
 
 1. Create a new `.yaml` file under `tests/cases/`.
 2. Fill in the required fields (`description`, `before_stack`, `input`, `expected_after_stack`, `expected_after_input`).
-3. Run `cargo test`.
+3. Add `expected_before_hint` when you need to assert the live hint before pressing `Enter`.
+4. Run `cargo test`.
 
-## Keybinding configuration
+## Configuration
 
 `lifocalc` uses an embedded TOML default config from `config/default-config.toml` as the source of truth.
 
 - User overrides are loaded from `${XDG_CONFIG_HOME}/lifocalc/config.toml`, or `~/.config/lifocalc/config.toml` when `XDG_CONFIG_HOME` is unset.
-- Final keymap is `embedded defaults + user overrides`.
+- Final display settings and keymap are `embedded defaults + user overrides`.
 - Use `none` to disable a default binding.
 - Invalid keys or unknown action IDs are ignored with a warning.
 
 Example:
 
 ```toml
+[display.approximation_hint]
+stack = true
+input = false
+
 [keybindings]
 "pageup" = "history.prev"
 "pagedown" = "history.next"

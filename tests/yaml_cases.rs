@@ -1,7 +1,7 @@
 use std::{fs, path::Path};
 
 use lifocalc::{
-    app::App,
+    app::{App, HintToken},
     engine::{self, EngineError},
 };
 use serde::Deserialize;
@@ -11,9 +11,16 @@ struct YamlCase {
     description: String,
     before_stack: Vec<String>,
     input: String,
+    expected_before_hint: Option<Vec<YamlHintToken>>,
     expected_after_stack: Vec<String>,
     expected_after_input: String,
     expected_status: Option<String>,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+struct YamlHintToken {
+    primary: String,
+    approximation: Option<String>,
 }
 
 fn run_yaml_case(path: &Path) -> datatest_stable::Result<()> {
@@ -26,6 +33,23 @@ fn run_yaml_case(path: &Path) -> datatest_stable::Result<()> {
         .map_err(|error| format!("{case_name}: invalid before_stack: {error}"))?;
     app.set_stack(before_stack);
     app.set_input(case.input.clone());
+
+    if let Some(expected_before_hint) = &case.expected_before_hint {
+        let actual_before_hint = app
+            .hint()
+            .unwrap_or_default()
+            .into_iter()
+            .map(YamlHintToken::from)
+            .collect::<Vec<_>>();
+
+        if &actual_before_hint != expected_before_hint {
+            return Err(format!(
+                "{case_name}: before_hint mismatch, got {:?}, expected {:?}",
+                actual_before_hint, expected_before_hint
+            )
+            .into());
+        }
+    }
 
     let _ = app.submit_input();
 
@@ -75,6 +99,15 @@ fn parse_stack(values: &[String]) -> Result<Vec<engine::Number>, EngineError> {
         .iter()
         .map(|value| engine::parse_number(value))
         .collect()
+}
+
+impl From<HintToken> for YamlHintToken {
+    fn from(value: HintToken) -> Self {
+        Self {
+            primary: value.primary,
+            approximation: value.approximation,
+        }
+    }
 }
 
 datatest_stable::harness! {

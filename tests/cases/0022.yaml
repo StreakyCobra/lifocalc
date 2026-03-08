@@ -1,0 +1,12 @@
+description: "keeps approximate literals unchanged while extending exact hints"
+before_stack: []
+input: "1 0.5f"
+expected_before_hint:
+  - primary: "1"
+    approximation: "1f"
+  - primary: "0.5f"
+    approximation:
+expected_after_stack:
+  - "1"
+  - "0.5f"
+expected_after_input: ""

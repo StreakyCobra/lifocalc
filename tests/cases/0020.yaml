@@ -1,0 +1,9 @@
+description: "shows exact literal input hint with approximation before submission"
+before_stack: []
+input: "1/2"
+expected_before_hint:
+  - primary: "1/2"
+    approximation: "0.5f"
+expected_after_stack:
+  - "1/2"
+expected_after_input: ""
