@@ -163,22 +163,22 @@ impl App {
 
         let mut candidate_stack = self.stack.clone();
         let result = if should_mutate_global_stack {
-            engine::evaluate_expression_in_place(&entry, &mut candidate_stack)
+            engine::evaluate_expression_in_place(&entry, &mut candidate_stack).map(|_| {
+                candidate_stack.clone()
+            })
         } else {
-            engine::evaluate_expression(&entry, &[])
+            engine::evaluate_expression_stack(&entry, &[])
         };
 
         match result {
-            Ok(value) => {
+            Ok(result_stack) => {
                 if should_mutate_global_stack {
-                    self.stack = candidate_stack;
-                    self.input.clear();
-                    self.cursor = 0;
+                    self.stack = result_stack;
                 } else {
-                    self.stack.push(value);
-                    self.input.clear();
-                    self.cursor = 0;
+                    self.stack.extend(result_stack);
                 }
+                self.input.clear();
+                self.cursor = 0;
                 self.status = None;
             }
             Err(error) => {
@@ -242,9 +242,9 @@ impl App {
         }
 
         if engine::has_number_token(trimmed) {
-            engine::evaluate_expression(trimmed, &[])
+            engine::evaluate_expression_stack(trimmed, &[])
                 .ok()
-                .map(|number| vec![self.hint_token(&number)])
+                .map(|stack| stack.iter().map(|number| self.hint_token(number)).collect())
         } else {
             engine::evaluate_expression(trimmed, &self.stack)
                 .ok()
@@ -438,6 +438,37 @@ mod tests {
                 approximation: None,
             }])
         );
+    }
+
+    #[test]
+    fn inline_expression_hint_shows_full_prompt_local_stack() {
+        let mut app = App::new();
+        app.set_input(".1 .2 ~");
+
+        assert_eq!(
+            app.hint(),
+            Some(vec![
+                HintToken {
+                    primary: "1/10".to_string(),
+                    approximation: Some("0.1f".to_string()),
+                },
+                HintToken {
+                    primary: "0.2f".to_string(),
+                    approximation: None,
+                },
+            ])
+        );
+    }
+
+    #[test]
+    fn inline_expression_submission_appends_full_prompt_local_stack() {
+        let mut app = App::new();
+        app.set_stack(vec![engine::parse_number("10").expect("expected valid number")]);
+        app.set_input(".1 .2 ~");
+
+        let _ = app.submit_input();
+
+        assert_eq!(app.stack_as_strings(), vec!["10", "1/10", "0.2f"]);
     }
 
     #[test]

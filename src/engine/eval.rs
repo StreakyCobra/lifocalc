@@ -1,6 +1,9 @@
 use super::{EngineError, Number, functions, parse};
 
-pub fn evaluate_expression(input: &str, base_stack: &[Number]) -> Result<Number, EngineError> {
+pub fn evaluate_expression_stack(
+    input: &str,
+    base_stack: &[Number],
+) -> Result<Vec<Number>, EngineError> {
     let tokens = parse::tokenize(input);
     if tokens.is_empty() {
         return Err(EngineError::EmptyInput);
@@ -8,7 +11,18 @@ pub fn evaluate_expression(input: &str, base_stack: &[Number]) -> Result<Number,
 
     let mut stack = base_stack.to_vec();
     evaluate_tokens(tokens, &mut stack)?;
-    stack.last().cloned().ok_or(EngineError::EmptyInput)
+    if stack.is_empty() {
+        return Err(EngineError::EmptyInput);
+    }
+
+    Ok(stack)
+}
+
+pub fn evaluate_expression(input: &str, base_stack: &[Number]) -> Result<Number, EngineError> {
+    evaluate_expression_stack(input, base_stack)?
+        .last()
+        .cloned()
+        .ok_or(EngineError::EmptyInput)
 }
 
 pub fn evaluate_expression_in_place(
@@ -50,6 +64,14 @@ mod tests {
     fn evaluates_rpn_expression_from_empty_stack() {
         let result = evaluate_expression("12 12 *", &[]).expect("expected expression to evaluate");
         assert_eq!(result, number("144"));
+    }
+
+    #[test]
+    fn returns_full_prompt_local_stack_for_inline_expression() {
+        let result =
+            evaluate_expression_stack(".1 .2 ~", &[]).expect("expected expression to evaluate");
+
+        assert_eq!(result, vec![number("1/10"), number("0.2f")]);
     }
 
     #[test]
