@@ -8,6 +8,7 @@ use crossterm::{
 };
 use lifocalc::{
     app::App,
+    config::DisplayConfig,
     history::HistoryStore,
     keybindings::{Action, KeyBindings},
     ui,
@@ -37,7 +38,7 @@ fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Re
 }
 
 fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> {
-    let mut app = App::new();
+    let mut app = App::new_with_display_config(DisplayConfig::load());
     let keybindings = KeyBindings::load();
     let history_store = HistoryStore::for_user();
 

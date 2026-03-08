@@ -10,6 +10,12 @@ pub enum Number {
     Approx(f64),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FormattedNumber {
+    pub primary: String,
+    pub approximation: Option<String>,
+}
+
 impl Number {
     pub fn zero() -> Self {
         Self::Exact(BigRational::zero())
@@ -115,6 +121,52 @@ pub fn format_number(number: &Number) -> String {
     }
 }
 
+pub fn format_number_parts(number: &Number) -> FormattedNumber {
+    FormattedNumber {
+        primary: format_number(number),
+        approximation: match number {
+            Number::Exact(_) => number.to_f64().ok().map(format_approximate),
+            Number::Approx(_) => None,
+        },
+    }
+}
+
+fn format_approximate(value: f64) -> String {
+    format!("{value}f")
+}
+
 pub fn pow10(exponent: usize) -> BigInt {
     BigInt::from(10u8).pow(exponent as u32)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{FormattedNumber, Number, format_number_parts};
+    use num_rational::BigRational;
+
+    #[test]
+    fn exact_number_includes_approximation_hint() {
+        let number = Number::from_exact(BigRational::new(1.into(), 2.into()));
+
+        assert_eq!(
+            format_number_parts(&number),
+            FormattedNumber {
+                primary: "1/2".to_string(),
+                approximation: Some("0.5f".to_string()),
+            }
+        );
+    }
+
+    #[test]
+    fn approximate_number_stays_single_part() {
+        let number = Number::Approx(0.5);
+
+        assert_eq!(
+            format_number_parts(&number),
+            FormattedNumber {
+                primary: "0.5f".to_string(),
+                approximation: None,
+            }
+        );
+    }
 }

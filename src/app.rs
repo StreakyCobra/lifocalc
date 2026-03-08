@@ -1,4 +1,10 @@
-use crate::engine;
+use crate::{config::DisplayConfig, engine};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HintToken {
+    pub primary: String,
+    pub approximation: Option<String>,
+}
 
 #[derive(Debug, Default)]
 pub struct App {
@@ -8,11 +14,19 @@ pub struct App {
     history: Vec<String>,
     history_index: Option<usize>,
     status: Option<String>,
+    display_config: DisplayConfig,
 }
 
 impl App {
     pub fn new() -> Self {
-        Self::default()
+        Self::new_with_display_config(DisplayConfig::default())
+    }
+
+    pub fn new_with_display_config(display_config: DisplayConfig) -> Self {
+        Self {
+            display_config,
+            ..Self::default()
+        }
     }
 
     pub fn input(&self) -> &str {
@@ -38,6 +52,10 @@ impl App {
 
     pub fn status(&self) -> Option<&str> {
         self.status.as_deref()
+    }
+
+    pub fn display_config(&self) -> DisplayConfig {
+        self.display_config
     }
 
     pub fn set_input(&mut self, input: impl Into<String>) {
@@ -208,7 +226,7 @@ impl App {
         self.status = None;
     }
 
-    pub fn hint(&self) -> Option<String> {
+    pub fn hint(&self) -> Option<Vec<HintToken>> {
         let trimmed = self.input.trim();
         if trimmed.is_empty() {
             return None;
@@ -218,20 +236,19 @@ impl App {
             return engine::parse_numbers(trimmed).ok().map(|numbers| {
                 numbers
                     .iter()
-                    .map(engine::format_number)
-                    .collect::<Vec<_>>()
-                    .join(" ")
+                    .map(|number| self.hint_token(number))
+                    .collect()
             });
         }
 
         if engine::has_number_token(trimmed) {
             engine::evaluate_expression(trimmed, &[])
                 .ok()
-                .map(|number| engine::format_number(&number))
+                .map(|number| vec![self.hint_token(&number)])
         } else {
             engine::evaluate_expression(trimmed, &self.stack)
                 .ok()
-                .map(|number| engine::format_number(&number))
+                .map(|number| vec![self.hint_token(&number)])
         }
     }
 
@@ -240,6 +257,19 @@ impl App {
             .iter()
             .map(engine::format_number)
             .collect()
+    }
+
+    fn hint_token(&self, number: &engine::Number) -> HintToken {
+        let formatted = engine::format_number_parts(number);
+
+        HintToken {
+            primary: formatted.primary,
+            approximation: if self.display_config.approximation_hint.input {
+                formatted.approximation
+            } else {
+                None
+            },
+        }
     }
 
     fn char_before_cursor(&self) -> Option<char> {
@@ -280,8 +310,11 @@ fn byte_index_for_char(input: &str, char_index: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::App;
-    use crate::engine;
+    use super::{App, HintToken};
+    use crate::{
+        config::{ApproximationHintConfig, DisplayConfig},
+        engine,
+    };
 
     #[test]
     fn history_navigation_round_trips_to_empty_input() {
@@ -339,7 +372,19 @@ mod tests {
         let mut app = App::new();
         app.set_input("0.125 10/6");
 
-        assert_eq!(app.hint(), Some("1/8 5/3".to_string()));
+        assert_eq!(
+            app.hint(),
+            Some(vec![
+                HintToken {
+                    primary: "1/8".to_string(),
+                    approximation: Some("0.125f".to_string()),
+                },
+                HintToken {
+                    primary: "5/3".to_string(),
+                    approximation: Some("1.6666666666666667f".to_string()),
+                },
+            ])
+        );
     }
 
     #[test]
@@ -351,7 +396,13 @@ mod tests {
         ]);
         app.set_input("/");
 
-        assert_eq!(app.hint(), Some("1/3".to_string()));
+        assert_eq!(
+            app.hint(),
+            Some(vec![HintToken {
+                primary: "1/3".to_string(),
+                approximation: Some("0.3333333333333333f".to_string()),
+            }])
+        );
     }
 
     #[test]
@@ -359,7 +410,19 @@ mod tests {
         let mut app = App::new();
         app.set_input("1 0.5f");
 
-        assert_eq!(app.hint(), Some("1 0.5f".to_string()));
+        assert_eq!(
+            app.hint(),
+            Some(vec![
+                HintToken {
+                    primary: "1".to_string(),
+                    approximation: Some("1f".to_string()),
+                },
+                HintToken {
+                    primary: "0.5f".to_string(),
+                    approximation: None,
+                },
+            ])
+        );
     }
 
     #[test]
@@ -368,6 +431,31 @@ mod tests {
         app.set_stack(vec![engine::parse_number("2").expect("expected valid number")]);
         app.set_input("sqrt");
 
-        assert_eq!(app.hint(), Some("1.4142135623730951f".to_string()));
+        assert_eq!(
+            app.hint(),
+            Some(vec![HintToken {
+                primary: "1.4142135623730951f".to_string(),
+                approximation: None,
+            }])
+        );
+    }
+
+    #[test]
+    fn input_hint_can_disable_exact_approximations() {
+        let mut app = App::new_with_display_config(DisplayConfig {
+            approximation_hint: ApproximationHintConfig {
+                stack: true,
+                input: false,
+            },
+        });
+        app.set_input("1/2");
+
+        assert_eq!(
+            app.hint(),
+            Some(vec![HintToken {
+                primary: "1/2".to_string(),
+                approximation: None,
+            }])
+        );
     }
 }

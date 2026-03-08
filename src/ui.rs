@@ -28,13 +28,25 @@ fn render_stack(frame: &mut Frame, app: &App, area: Rect) {
 
     for (index, value) in visible_slice.iter().enumerate() {
         let line_number = visible_items - index;
-        lines.push(Line::from(vec![
+        let formatted = engine::format_number_parts(value);
+        let mut spans = vec![
             Span::styled(
                 format!("{line_number}: "),
                 Style::default().fg(Color::DarkGray),
             ),
-            Span::raw(engine::format_number(value)),
-        ]));
+            Span::raw(formatted.primary),
+        ];
+
+        if app.display_config().approximation_hint.stack {
+            if let Some(approximation) = formatted.approximation {
+                spans.push(Span::styled(
+                    format!(" | {approximation}"),
+                    Style::default().fg(Color::DarkGray),
+                ));
+            }
+        }
+
+        lines.push(Line::from(spans));
     }
 
     let stack_widget =
@@ -57,7 +69,23 @@ fn render_input(frame: &mut Frame, app: &App, area: Rect) {
     let mut spans = vec![Span::raw(app.input().to_string())];
     if let Some(hint) = app.hint() {
         spans.push(Span::raw("  "));
-        spans.push(Span::styled(hint, Style::default().fg(Color::DarkGray)));
+        for (index, token) in hint.iter().enumerate() {
+            if index > 0 {
+                spans.push(Span::raw(" "));
+            }
+
+            spans.push(Span::styled(
+                token.primary.clone(),
+                Style::default().fg(Color::DarkGray),
+            ));
+
+            if let Some(approximation) = &token.approximation {
+                spans.push(Span::styled(
+                    format!(" | {approximation}"),
+                    Style::default().fg(Color::DarkGray),
+                ));
+            }
+        }
     }
 
     frame.render_widget(Paragraph::new(Line::from(spans)).block(block), area);
