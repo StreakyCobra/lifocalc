@@ -9,7 +9,7 @@
 - `Enter` behavior:
   - numbers-only input pushes values to the global stack and clears input.
   - operator-only input consumes values from the global stack and pushes the result back to the stack.
-  - expressions that include inline numbers are evaluated against an independent prompt-local stack, then the result is pushed to the global stack.
+  - expressions that include inline numbers are evaluated against an independent prompt-local stack, then the full prompt-local result stack is appended to the global stack.
 - History navigation with up/down arrows.
 - Input history is persisted across app restarts in `${XDG_STATE_HOME}/lifocalc/history`, or `~/.local/state/lifocalc/history` when `XDG_STATE_HOME` is unset.
 - Persisted history entries are de-duplicated, and expressions that fail evaluation are not written to the history file.

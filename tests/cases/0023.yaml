@@ -1,0 +1,10 @@
+description: "shows full prompt-local stack for exact to approximate conversion"
+before_stack: []
+input: ".1 .2 ~"
+expected_before_hint:
+  - primary: "1/10"
+    approximation: "0.1f"
+  - primary: "0.2f"
+    approximation:
+expected_after_stack: ["1/10", "0.2f"]
+expected_after_input: ""

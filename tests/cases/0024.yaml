@@ -1,0 +1,14 @@
+description: "appends full prompt-local stack to an existing global stack"
+before_stack:
+  - "10"
+input: ".1 .2 ~"
+expected_before_hint:
+  - primary: "1/10"
+    approximation: "0.1f"
+  - primary: "0.2f"
+    approximation:
+expected_after_stack:
+  - "10"
+  - "1/10"
+  - "0.2f"
+expected_after_input: ""
