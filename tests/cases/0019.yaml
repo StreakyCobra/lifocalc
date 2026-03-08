@@ -1,0 +1,6 @@
+description: "pushes a direct fraction literal into the global stack"
+before_stack: []
+input: "1/2"
+expected_after_stack:
+  - "1/2"
+expected_after_input: ""
