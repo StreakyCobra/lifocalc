@@ -16,6 +16,10 @@ fn input_hint_style() -> Style {
     Style::default().fg(Color::Red)
 }
 
+fn input_approximation_hint_style() -> Style {
+    Style::default().fg(Color::Rgb(170, 170, 170))
+}
+
 fn input_hint_spans(hint: &[crate::app::HintToken]) -> Vec<Span<'static>> {
     let mut spans = Vec::new();
 
@@ -28,7 +32,7 @@ fn input_hint_spans(hint: &[crate::app::HintToken]) -> Vec<Span<'static>> {
     }
 
     if hint.iter().any(|token| token.approximation.is_some()) {
-        spans.push(Span::styled(" | ", input_hint_style()));
+        spans.push(Span::styled(" | ", input_approximation_hint_style()));
 
         for (index, token) in hint.iter().enumerate() {
             if index > 0 {
@@ -39,7 +43,7 @@ fn input_hint_spans(hint: &[crate::app::HintToken]) -> Vec<Span<'static>> {
                 token.approximation
                     .clone()
                     .unwrap_or_else(|| token.primary.clone()),
-                input_hint_style(),
+                input_approximation_hint_style(),
             ));
         }
     }
