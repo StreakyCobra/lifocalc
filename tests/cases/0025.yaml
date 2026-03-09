@@ -1,0 +1,9 @@
+description: "adds compatible data units and keeps a readable display unit"
+before_stack: []
+input: "1[kB] 2[B] +"
+expected_before_hint:
+  - primary: "1.002[kB]"
+    approximation: "1.002f[kB]"
+expected_after_stack:
+  - "1.002[kB]"
+expected_after_input: ""

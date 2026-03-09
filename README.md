@@ -22,6 +22,14 @@
   - approximate inputs use an `f` suffix, such as `0.5f` or `1e-3f`
   - `~` converts an exact value to approximate, for example `1 2 / ~` -> `0.5f`
   - `sqrt`, `ln`, `exp`, `sin`, `cos`, and `tan` run in approximate mode and return `f`-suffixed values
+- Quantities can carry units:
+  - quantity literals use `number[unit]`, such as `1[kB]`, `60[s]`, or `1[MB/s]`
+  - unitless values still work exactly as before, for example `1 2 +` -> `3`
+  - values are stored in canonical base units internally and auto-formatted into a readable unit in the range `[1, 1000)` when possible
+  - explicit conversion uses `in`, for example `1[MB/s] [kB/s] in`
+  - implicit conversion shorthand is also supported, so `1[MB/s] [kB/s] 2 *` behaves like `1[MB/s] [kB/s] in 2 *`
+  - mixed-unit `+` and `-` require compatible dimensions, while `*` and `/` can produce derived units like `kB/s`
+  - the initial unit registry includes data (`b`, `B`) and time (`s`, `min`, `h`, `d`) with SI prefixes such as `k`, `M`, `m`, and `u`
 
 ## Project layout
 
@@ -77,6 +85,7 @@ All numeric values in YAML are strings to keep test files stable while the inter
 
 - User overrides are loaded from `${XDG_CONFIG_HOME}/lifocalc/config.toml`, or `~/.config/lifocalc/config.toml` when `XDG_CONFIG_HOME` is unset.
 - Final display settings and keymap are `embedded defaults + user overrides`.
+- Unit conversion shorthand can be disabled with `[units].implicit_conversion = false`, which requires explicit `in` after a bare unit spec.
 - Use `none` to disable a default binding.
 - Invalid keys or unknown action IDs are ignored with a warning.
 
@@ -86,6 +95,9 @@ Example:
 [display.approximation_hint]
 stack = true
 input = false
+
+[units]
+implicit_conversion = true
 
 [keybindings]
 "pageup" = "history.prev"

@@ -1,0 +1,9 @@
+description: "implicit conversion can reformat canonical time values"
+before_stack: []
+input: "60[s] [min]"
+expected_before_hint:
+  - primary: "1[min]"
+    approximation: "1f[min]"
+expected_after_stack:
+  - "1[min]"
+expected_after_input: ""

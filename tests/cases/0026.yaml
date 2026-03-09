@@ -1,0 +1,9 @@
+description: "implicit unit conversion shorthand composes with later arithmetic"
+before_stack: []
+input: "1[MB/s] [kB/s] 2 *"
+expected_before_hint:
+  - primary: "2000[kB/s]"
+    approximation: "2000f[kB/s]"
+expected_after_stack:
+  - "2000[kB/s]"
+expected_after_input: ""

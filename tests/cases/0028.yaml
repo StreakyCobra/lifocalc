@@ -1,0 +1,6 @@
+description: "rejects converting a unitless value into a dimensional unit"
+before_stack: []
+input: "2 [kB]"
+expected_after_stack: []
+expected_after_input: "2 [kB]"
+expected_status: "incompatible units"
