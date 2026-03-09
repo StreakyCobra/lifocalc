@@ -216,7 +216,7 @@ mod tests {
     #[test]
     fn parses_scientific_notation_exactly() {
         let number = parse_number("1.2e3").expect("expected scientific notation to parse");
-        assert_eq!(format_number(&number), "1200");
+        assert_eq!(format_number(&number), "1'200");
     }
 
     #[test]

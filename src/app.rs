@@ -447,6 +447,23 @@ mod tests {
     }
 
     #[test]
+    fn hints_and_stack_use_digit_grouping() {
+        let mut app = App::new();
+        app.set_stack(vec![engine::parse_number("43200").expect("expected valid number")]);
+        app.set_input("43200 43200 +");
+
+        assert_eq!(
+            app.hint(),
+            Some(vec![HintToken {
+                primary: "86'400".to_string(),
+                approximation: Some("86'400f".to_string()),
+            }])
+        );
+
+        assert_eq!(app.stack_as_strings(), vec!["43'200"]);
+    }
+
+    #[test]
     fn inline_expression_hint_shows_full_prompt_local_stack() {
         let mut app = App::new();
         app.set_input(".1 .2 ~");

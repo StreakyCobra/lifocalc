@@ -292,7 +292,7 @@ pub fn format_number_parts(number: &Number) -> FormattedNumber {
 }
 
 fn format_approximate(value: f64, unit_text: Option<&str>) -> String {
-    let mut formatted = format!("{value}f");
+    let mut formatted = format_decimal_with_grouping(&format!("{value}f"));
     if let Some(unit_text) = unit_text {
         formatted.push('[');
         formatted.push_str(unit_text);
@@ -331,13 +331,13 @@ fn scale_magnitude(magnitude: Magnitude, factor: &BigRational) -> Result<Magnitu
 fn format_magnitude(magnitude: &Magnitude, prefer_decimal: bool) -> String {
     match magnitude {
         Magnitude::Exact(number) => format_exact_rational(number, prefer_decimal),
-        Magnitude::Approx(number) => format!("{number}f"),
+        Magnitude::Approx(number) => format_decimal_with_grouping(&format!("{number}f")),
     }
 }
 
 fn format_exact_rational(number: &BigRational, prefer_decimal: bool) -> String {
     if number.is_integer() {
-        return number.to_integer().to_string();
+        return format_integer_with_grouping(&number.to_integer().to_string());
     }
 
     if prefer_decimal {
@@ -346,7 +346,11 @@ fn format_exact_rational(number: &BigRational, prefer_decimal: bool) -> String {
         }
     }
 
-    format!("{}/{}", number.numer(), number.denom())
+    format!(
+        "{}/{}",
+        format_integer_with_grouping(&number.numer().to_string()),
+        format_integer_with_grouping(&number.denom().to_string())
+    )
 }
 
 fn format_terminating_decimal(number: &BigRational) -> Option<String> {
@@ -391,8 +395,79 @@ fn format_terminating_decimal(number: &BigRational) -> Option<String> {
         digits
     };
     let split_at = padded.len() - scale;
-    let result = format!("{}.{}", &padded[..split_at], &padded[split_at..]);
+    let result = format!(
+        "{}.{}",
+        format_integer_with_grouping(&padded[..split_at]),
+        &padded[split_at..]
+    );
     Some(if negative { format!("-{result}") } else { result })
+}
+
+fn format_decimal_with_grouping(value: &str) -> String {
+    let Some(number_end) = value.find(|ch: char| !(ch.is_ascii_digit() || matches!(ch, '-' | '+' | '.' | 'e' | 'E')))
+    else {
+        return format_number_text_with_grouping(value);
+    };
+
+    let (number_part, suffix) = value.split_at(number_end);
+    format!("{}{}", format_number_text_with_grouping(number_part), suffix)
+}
+
+fn format_number_text_with_grouping(value: &str) -> String {
+    let Some(exponent_index) = value.find(['e', 'E']) else {
+        return format_non_exponent_decimal_with_grouping(value);
+    };
+
+    let (mantissa, exponent) = value.split_at(exponent_index);
+    format!(
+        "{}{}",
+        format_non_exponent_decimal_with_grouping(mantissa),
+        exponent
+    )
+}
+
+fn format_non_exponent_decimal_with_grouping(value: &str) -> String {
+    let sign_len = usize::from(value.starts_with('-') || value.starts_with('+'));
+    let (sign, unsigned) = value.split_at(sign_len);
+
+    let Some(decimal_index) = unsigned.find('.') else {
+        return format!("{}{}", sign, format_integer_with_grouping(unsigned));
+    };
+
+    let (integer, fraction) = unsigned.split_at(decimal_index);
+    format!("{}{integer_grouped}{fraction}", sign, integer_grouped = format_integer_with_grouping(integer))
+}
+
+fn format_integer_with_grouping(value: &str) -> String {
+    let (sign, digits) = if let Some(stripped) = value.strip_prefix('-') {
+        ("-", stripped)
+    } else if let Some(stripped) = value.strip_prefix('+') {
+        ("+", stripped)
+    } else {
+        ("", value)
+    };
+
+    if digits.len() <= 3 {
+        return value.to_string();
+    }
+
+    let mut formatted = String::with_capacity(value.len() + (digits.len() - 1) / 3);
+    formatted.push_str(sign);
+
+    let first_group_len = match digits.len() % 3 {
+        0 => 3,
+        len => len,
+    };
+    formatted.push_str(&digits[..first_group_len]);
+
+    let mut index = first_group_len;
+    while index < digits.len() {
+        formatted.push('\'');
+        formatted.push_str(&digits[index..index + 3]);
+        index += 3;
+    }
+
+    formatted
 }
 
 fn combine_dims(
@@ -454,5 +529,26 @@ mod tests {
 
         assert!(value.is_unitless());
         assert_eq!(super::format_number(&value), "6");
+    }
+
+    #[test]
+    fn formats_large_integer_with_grouping() {
+        let number = Number::from_exact(BigRational::from_integer(43200.into()));
+
+        assert_eq!(super::format_number(&number), "43'200");
+    }
+
+    #[test]
+    fn formats_large_approximate_with_grouping() {
+        let number = Number::from_parts(Magnitude::Approx(43200.5), BTreeMap::new(), None);
+
+        assert_eq!(super::format_number(&number), "43'200.5f");
+    }
+
+    #[test]
+    fn formats_fraction_parts_with_grouping() {
+        let number = Number::from_exact(BigRational::new(43200.into(), 1001.into()));
+
+        assert_eq!(super::format_number(&number), "43'200/1'001");
     }
 }

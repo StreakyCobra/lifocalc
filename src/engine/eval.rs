@@ -220,7 +220,7 @@ mod tests {
     fn applies_implicit_unit_conversion_before_later_math() {
         let result = evaluate_expression("1[MB/s] [kB/s] 2 *", &[])
             .expect("expected conversion shorthand to work");
-        assert_eq!(format_number(&result), "2000[kB/s]");
+        assert_eq!(format_number(&result), "2'000[kB/s]");
     }
 
     #[test]
@@ -240,6 +240,6 @@ mod tests {
         )
         .expect("expected explicit conversion to work");
 
-        assert_eq!(format_number(&result), "2000[kB/s]");
+        assert_eq!(format_number(&result), "2'000[kB/s]");
     }
 }
