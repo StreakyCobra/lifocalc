@@ -160,14 +160,16 @@ impl App {
         }
 
         let should_mutate_global_stack = !engine::has_number_token(&entry);
+        let options = engine::EvalOptions {
+            implicit_conversion: self.display_config.units.implicit_conversion,
+        };
 
         let mut candidate_stack = self.stack.clone();
         let result = if should_mutate_global_stack {
-            engine::evaluate_expression_in_place(&entry, &mut candidate_stack).map(|_| {
-                candidate_stack.clone()
-            })
+            engine::evaluate_expression_in_place_with_options(&entry, &mut candidate_stack, options)
+                .map(|_| candidate_stack.clone())
         } else {
-            engine::evaluate_expression_stack(&entry, &[])
+            engine::evaluate_expression_stack_with_options(&entry, &[], options)
         };
 
         match result {
@@ -241,12 +243,16 @@ impl App {
             });
         }
 
+        let options = engine::EvalOptions {
+            implicit_conversion: self.display_config.units.implicit_conversion,
+        };
+
         if engine::has_number_token(trimmed) {
-            engine::evaluate_expression_stack(trimmed, &[])
+            engine::evaluate_expression_stack_with_options(trimmed, &[], options)
                 .ok()
                 .map(|stack| stack.iter().map(|number| self.hint_token(number)).collect())
         } else {
-            engine::evaluate_expression(trimmed, &self.stack)
+            engine::evaluate_expression_with_options(trimmed, &self.stack, options)
                 .ok()
                 .map(|number| vec![self.hint_token(&number)])
         }
@@ -312,7 +318,7 @@ fn byte_index_for_char(input: &str, char_index: usize) -> usize {
 mod tests {
     use super::{App, HintToken};
     use crate::{
-        config::{ApproximationHintConfig, DisplayConfig},
+        config::{ApproximationHintConfig, DisplayConfig, UnitsConfig},
         engine,
     };
 
@@ -478,6 +484,7 @@ mod tests {
                 stack: true,
                 input: false,
             },
+            units: UnitsConfig::default(),
         });
         app.set_input("1/2");
 
@@ -488,5 +495,20 @@ mod tests {
                 approximation: None,
             }])
         );
+    }
+
+    #[test]
+    fn implicit_conversion_can_be_disabled() {
+        let mut app = App::new_with_display_config(DisplayConfig {
+            approximation_hint: ApproximationHintConfig::default(),
+            units: UnitsConfig {
+                implicit_conversion: false,
+            },
+        });
+        app.set_input("1[MB/s] [kB/s] 2 *");
+
+        let _ = app.submit_input();
+
+        assert_eq!(app.status(), Some("explicit 'in' requires a preceding unit conversion"));
     }
 }

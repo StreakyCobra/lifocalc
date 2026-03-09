@@ -4,7 +4,7 @@ use num_traits::{ToPrimitive, Zero};
 use std::collections::BTreeMap;
 
 use super::EngineError;
-use super::units::{BaseDimension, UnitExpr};
+use super::units::{BaseDimension, UnitExpr, preferred_display_unit, render_unit_expr};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Magnitude {
@@ -78,6 +78,25 @@ impl Number {
         self.dims.is_empty()
     }
 
+    pub fn scaled(mut self, factor: &BigRational) -> Result<Self, EngineError> {
+        self.magnitude = scale_magnitude(self.magnitude, factor)?;
+        Ok(self)
+    }
+
+    pub fn with_dimensions(mut self, dims: BTreeMap<BaseDimension, i32>) -> Self {
+        self.dims = dims;
+        self
+    }
+
+    pub fn convert_display_unit(mut self, display_unit: UnitExpr) -> Result<Self, EngineError> {
+        if self.dims != display_unit.dims {
+            return Err(EngineError::IncompatibleUnits);
+        }
+
+        self.display_unit = Some(display_unit);
+        Ok(self)
+    }
+
     pub fn is_zero(&self) -> bool {
         match &self.magnitude {
             Magnitude::Exact(value) => value.is_zero(),
@@ -138,14 +157,21 @@ impl Number {
 
     pub fn multiply(lhs: Self, rhs: Self) -> Result<Self, EngineError> {
         let dims = combine_dims(&lhs.dims, &rhs.dims, 1);
+        let display_unit = if lhs.is_unitless() && !rhs.is_unitless() {
+            rhs.display_unit.clone()
+        } else if rhs.is_unitless() {
+            lhs.display_unit.clone()
+        } else {
+            None
+        };
         match (lhs.magnitude, rhs.magnitude) {
             (Magnitude::Exact(lhs), Magnitude::Exact(rhs)) => {
-                Ok(Self::from_parts(Magnitude::Exact(lhs * rhs), dims, None))
+                Ok(Self::from_parts(Magnitude::Exact(lhs * rhs), dims, display_unit))
             }
             (lhs, rhs) => Ok(Self::from_parts(
                 Magnitude::Approx(magnitude_to_f64(&lhs)? * magnitude_to_f64(&rhs)?),
                 dims,
-                None,
+                display_unit,
             )),
         }
     }
@@ -156,14 +182,19 @@ impl Number {
         }
 
         let dims = combine_dims(&lhs.dims, &rhs.dims, -1);
+        let display_unit = if rhs.is_unitless() {
+            lhs.display_unit.clone()
+        } else {
+            None
+        };
         match (lhs.magnitude, rhs.magnitude) {
             (Magnitude::Exact(lhs), Magnitude::Exact(rhs)) => {
-                Ok(Self::from_parts(Magnitude::Exact(lhs / rhs), dims, None))
+                Ok(Self::from_parts(Magnitude::Exact(lhs / rhs), dims, display_unit))
             }
             (lhs, rhs) => Ok(Self::from_parts(
                 Magnitude::Approx(magnitude_to_f64(&lhs)? / magnitude_to_f64(&rhs)?),
                 dims,
-                None,
+                display_unit,
             )),
         }
     }
@@ -204,30 +235,70 @@ impl Number {
 }
 
 pub fn format_number(number: &Number) -> String {
-    match &number.magnitude {
-        Magnitude::Exact(number) => {
-            if number.is_integer() {
-                number.to_integer().to_string()
-            } else {
-                format!("{}/{}", number.numer(), number.denom())
-            }
-        }
-        Magnitude::Approx(number) => format!("{number}f"),
+    let chosen_unit = preferred_display_unit(
+        &number.dims,
+        number.display_unit.as_ref(),
+        number.to_f64().unwrap_or_default(),
+    );
+    let (magnitude, unit_text) = if let Some(unit) = chosen_unit {
+        let inverse_factor = BigRational::from_integer(1.into()) / unit.factor.clone();
+        (
+            scale_magnitude(number.magnitude.clone(), &inverse_factor)
+                .unwrap_or_else(|_| number.magnitude.clone()),
+            Some(unit.text),
+        )
+    } else {
+        (number.magnitude.clone(), None)
+    };
+
+    let mut formatted = format_magnitude(&magnitude, unit_text.is_some());
+    if let Some(unit_text) = unit_text {
+        formatted.push('[');
+        formatted.push_str(&unit_text);
+        formatted.push(']');
+    } else if !number.dims.is_empty() {
+        formatted.push('[');
+        formatted.push_str(&render_unit_expr(&number.dims));
+        formatted.push(']');
     }
+    formatted
 }
 
 pub fn format_number_parts(number: &Number) -> FormattedNumber {
+    let chosen_unit = preferred_display_unit(
+        &number.dims,
+        number.display_unit.as_ref(),
+        number.to_f64().unwrap_or_default(),
+    );
+    let approximation = match &number.magnitude {
+        Magnitude::Exact(_) => {
+            let unit_factor = chosen_unit
+                .as_ref()
+                .map(|unit| unit.factor.clone())
+                .unwrap_or_else(|| BigRational::from_integer(1.into()));
+            let scaled = number.to_f64().ok().map(|value| {
+                let factor = unit_factor.to_f64().unwrap_or(1.0);
+                value / factor
+            });
+            scaled.map(|value| format_approximate(value, chosen_unit.as_ref().map(|unit| unit.text.as_str())))
+        }
+        Magnitude::Approx(_) => None,
+    };
+
     FormattedNumber {
         primary: format_number(number),
-        approximation: match &number.magnitude {
-            Magnitude::Exact(_) => number.to_f64().ok().map(format_approximate),
-            Magnitude::Approx(_) => None,
-        },
+        approximation,
     }
 }
 
-fn format_approximate(value: f64) -> String {
-    format!("{value}f")
+fn format_approximate(value: f64, unit_text: Option<&str>) -> String {
+    let mut formatted = format!("{value}f");
+    if let Some(unit_text) = unit_text {
+        formatted.push('[');
+        formatted.push_str(unit_text);
+        formatted.push(']');
+    }
+    formatted
 }
 
 pub fn pow10(exponent: usize) -> BigInt {
@@ -242,6 +313,86 @@ fn magnitude_to_f64(magnitude: &Magnitude) -> Result<f64, EngineError> {
             .ok_or(EngineError::ApproximateConversionFailed),
         Magnitude::Approx(value) => Ok(*value),
     }
+}
+
+fn scale_magnitude(magnitude: Magnitude, factor: &BigRational) -> Result<Magnitude, EngineError> {
+    match magnitude {
+        Magnitude::Exact(value) => Ok(Magnitude::Exact(value * factor.clone())),
+        Magnitude::Approx(value) => Ok(Magnitude::Approx(
+            value
+                * factor
+                    .to_f64()
+                    .filter(|factor| factor.is_finite())
+                    .ok_or(EngineError::ApproximateConversionFailed)?,
+        )),
+    }
+}
+
+fn format_magnitude(magnitude: &Magnitude, prefer_decimal: bool) -> String {
+    match magnitude {
+        Magnitude::Exact(number) => format_exact_rational(number, prefer_decimal),
+        Magnitude::Approx(number) => format!("{number}f"),
+    }
+}
+
+fn format_exact_rational(number: &BigRational, prefer_decimal: bool) -> String {
+    if number.is_integer() {
+        return number.to_integer().to_string();
+    }
+
+    if prefer_decimal {
+        if let Some(decimal) = format_terminating_decimal(number) {
+            return decimal;
+        }
+    }
+
+    format!("{}/{}", number.numer(), number.denom())
+}
+
+fn format_terminating_decimal(number: &BigRational) -> Option<String> {
+    let mut denominator = number.denom().clone();
+    let two = BigInt::from(2u8);
+    let five = BigInt::from(5u8);
+    let zero = BigInt::from(0u8);
+    let mut twos = 0usize;
+    let mut fives = 0usize;
+
+    while (&denominator % &two) == zero {
+        denominator /= &two;
+        twos += 1;
+    }
+    while (&denominator % &five) == zero {
+        denominator /= &five;
+        fives += 1;
+    }
+
+    if denominator != BigInt::from(1u8) {
+        return None;
+    }
+
+    let scale = twos.max(fives);
+    let mut numerator = number.numer().clone();
+    if twos < scale {
+        numerator *= BigInt::from(2u8).pow((scale - twos) as u32);
+    }
+    if fives < scale {
+        numerator *= BigInt::from(5u8).pow((scale - fives) as u32);
+    }
+
+    let negative = numerator < BigInt::from(0u8);
+    let digits = if negative { (-numerator).to_string() } else { numerator.to_string() };
+    if scale == 0 {
+        return Some(if negative { format!("-{digits}") } else { digits });
+    }
+
+    let padded = if digits.len() <= scale {
+        format!("{}{}", "0".repeat(scale + 1 - digits.len()), digits)
+    } else {
+        digits
+    };
+    let split_at = padded.len() - scale;
+    let result = format!("{}.{}", &padded[..split_at], &padded[split_at..]);
+    Some(if negative { format!("-{result}") } else { result })
 }
 
 fn combine_dims(

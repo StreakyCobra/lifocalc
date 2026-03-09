@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 use num_rational::BigRational;
 
-use super::{EngineError, Number, number};
+use super::{EngineError, Number, number, units};
 
 pub fn tokenize(input: &str) -> Vec<&str> {
     input.split_whitespace().collect()
@@ -13,7 +13,14 @@ pub fn is_numbers_only(input: &str) -> bool {
 }
 
 pub fn parse_number(token: &str) -> Result<Number, EngineError> {
-    parse_number_impl(token).ok_or_else(|| EngineError::InvalidNumber(token.to_string()))
+    if let Some((body, unit)) = split_quantity_token(token) {
+        let number = parse_plain_number(body)
+            .ok_or_else(|| EngineError::InvalidNumber(token.to_string()))?;
+        let unit = units::parse_unit_expr(unit)?;
+        return number.scaled(&unit.factor)?.with_dimensions(unit.dims.clone()).convert_display_unit(unit);
+    }
+
+    parse_plain_number(token).ok_or_else(|| EngineError::InvalidNumber(token.to_string()))
 }
 
 pub fn parse_numbers(input: &str) -> Result<Vec<Number>, EngineError> {
@@ -29,7 +36,11 @@ pub fn has_number_token(input: &str) -> bool {
     tokenize(input).iter().any(|token| parse_number(token).is_ok())
 }
 
-fn parse_number_impl(token: &str) -> Option<Number> {
+pub fn parse_unit_spec(token: &str) -> Result<Option<super::UnitExpr>, EngineError> {
+    units::parse_unit_spec(token)
+}
+
+fn parse_plain_number(token: &str) -> Option<Number> {
     if token.is_empty() || is_non_finite(token) {
         return None;
     }
@@ -43,6 +54,16 @@ fn parse_number_impl(token: &str) -> Option<Number> {
     }
 
     parse_decimal_or_scientific(token)
+}
+
+fn split_quantity_token(token: &str) -> Option<(&str, &str)> {
+    let unit_start = token.rfind('[')?;
+    let unit = token.get(unit_start + 1..token.len().checked_sub(1)?)?;
+    if unit_start == 0 || !token.ends_with(']') {
+        return None;
+    }
+
+    Some((&token[..unit_start], unit))
 }
 
 fn is_non_finite(token: &str) -> bool {
@@ -208,5 +229,20 @@ mod tests {
     fn rejects_non_finite_approximate_values() {
         let error = parse_number("inff").expect_err("expected infinity to fail");
         assert_eq!(error, EngineError::InvalidNumber("inff".to_string()));
+    }
+
+    #[test]
+    fn parses_quantity_literal_with_display_unit() {
+        let number = parse_number("1.5[kB]").expect("expected quantity to parse");
+        assert_eq!(format_number(&number), "1.5[kB]");
+    }
+
+    #[test]
+    fn parses_bare_unit_spec_token() {
+        let unit = parse_unit_spec("[kB/s]")
+            .expect("expected parse to succeed")
+            .expect("expected unit spec");
+
+        assert_eq!(unit.text, "kB/s");
     }
 }

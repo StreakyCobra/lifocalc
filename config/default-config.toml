@@ -16,3 +16,6 @@
 [display.approximation_hint]
 stack = true
 input = true
+
+[units]
+implicit_conversion = true

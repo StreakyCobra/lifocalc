@@ -22,6 +22,20 @@ impl Default for ApproximationHintConfig {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct DisplayConfig {
     pub approximation_hint: ApproximationHintConfig,
+    pub units: UnitsConfig,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct UnitsConfig {
+    pub implicit_conversion: bool,
+}
+
+impl Default for UnitsConfig {
+    fn default() -> Self {
+        Self {
+            implicit_conversion: true,
+        }
+    }
 }
 
 impl DisplayConfig {
@@ -30,6 +44,7 @@ impl DisplayConfig {
 
         for (config, _) in load_config_layers() {
             apply_display_config(&mut display, config.display);
+            apply_units_config(&mut display, config.units);
         }
 
         display
@@ -40,6 +55,7 @@ impl DisplayConfig {
 pub(crate) struct ConfigFile {
     pub(crate) keybindings: Option<HashMap<String, String>>,
     pub(crate) display: Option<RawDisplayConfig>,
+    pub(crate) units: Option<RawUnitsConfig>,
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -51,6 +67,11 @@ pub(crate) struct RawDisplayConfig {
 pub(crate) struct RawApproximationHintConfig {
     stack: Option<bool>,
     input: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub(crate) struct RawUnitsConfig {
+    implicit_conversion: Option<bool>,
 }
 
 pub(crate) fn load_config_layers() -> Vec<(ConfigFile, String)> {
@@ -101,6 +122,16 @@ fn apply_display_config(display: &mut DisplayConfig, raw: Option<RawDisplayConfi
     }
 }
 
+fn apply_units_config(display: &mut DisplayConfig, raw: Option<RawUnitsConfig>) {
+    let Some(raw) = raw else {
+        return;
+    };
+
+    if let Some(implicit_conversion) = raw.implicit_conversion {
+        display.units.implicit_conversion = implicit_conversion;
+    }
+}
+
 fn user_config_path() -> Option<PathBuf> {
     if let Some(config_home) = env::var_os("XDG_CONFIG_HOME") {
         return Some(PathBuf::from(config_home).join("lifocalc/config.toml"));
@@ -122,6 +153,9 @@ mod tests {
                 approximation_hint: ApproximationHintConfig {
                     stack: true,
                     input: true,
+                },
+                units: UnitsConfig {
+                    implicit_conversion: true,
                 },
             }
         );
@@ -147,6 +181,27 @@ mod tests {
                     stack: false,
                     input: true,
                 },
+                units: UnitsConfig {
+                    implicit_conversion: true,
+                },
+            }
+        );
+    }
+
+    #[test]
+    fn units_config_applies_partial_override() {
+        let mut display = DisplayConfig::default();
+        apply_units_config(
+            &mut display,
+            Some(RawUnitsConfig {
+                implicit_conversion: Some(false),
+            }),
+        );
+
+        assert_eq!(
+            display.units,
+            UnitsConfig {
+                implicit_conversion: false,
             }
         );
     }

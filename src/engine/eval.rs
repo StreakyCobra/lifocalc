@@ -1,8 +1,29 @@
 use super::{EngineError, Number, functions, parse};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EvalOptions {
+    pub implicit_conversion: bool,
+}
+
+impl Default for EvalOptions {
+    fn default() -> Self {
+        Self {
+            implicit_conversion: true,
+        }
+    }
+}
+
 pub fn evaluate_expression_stack(
     input: &str,
     base_stack: &[Number],
+) -> Result<Vec<Number>, EngineError> {
+    evaluate_expression_stack_with_options(input, base_stack, EvalOptions::default())
+}
+
+pub fn evaluate_expression_stack_with_options(
+    input: &str,
+    base_stack: &[Number],
+    options: EvalOptions,
 ) -> Result<Vec<Number>, EngineError> {
     let tokens = parse::tokenize(input);
     if tokens.is_empty() {
@@ -10,7 +31,7 @@ pub fn evaluate_expression_stack(
     }
 
     let mut stack = base_stack.to_vec();
-    evaluate_tokens(tokens, &mut stack)?;
+    evaluate_tokens(tokens, &mut stack, options)?;
     if stack.is_empty() {
         return Err(EngineError::EmptyInput);
     }
@@ -19,7 +40,15 @@ pub fn evaluate_expression_stack(
 }
 
 pub fn evaluate_expression(input: &str, base_stack: &[Number]) -> Result<Number, EngineError> {
-    evaluate_expression_stack(input, base_stack)?
+    evaluate_expression_with_options(input, base_stack, EvalOptions::default())
+}
+
+pub fn evaluate_expression_with_options(
+    input: &str,
+    base_stack: &[Number],
+    options: EvalOptions,
+) -> Result<Number, EngineError> {
+    evaluate_expression_stack_with_options(input, base_stack, options)?
         .last()
         .cloned()
         .ok_or(EngineError::EmptyInput)
@@ -29,23 +58,60 @@ pub fn evaluate_expression_in_place(
     input: &str,
     stack: &mut Vec<Number>,
 ) -> Result<Number, EngineError> {
+    evaluate_expression_in_place_with_options(input, stack, EvalOptions::default())
+}
+
+pub fn evaluate_expression_in_place_with_options(
+    input: &str,
+    stack: &mut Vec<Number>,
+    options: EvalOptions,
+) -> Result<Number, EngineError> {
     let tokens = parse::tokenize(input);
     if tokens.is_empty() {
         return Err(EngineError::EmptyInput);
     }
 
-    evaluate_tokens(tokens, stack)?;
+    evaluate_tokens(tokens, stack, options)?;
     stack.last().cloned().ok_or(EngineError::EmptyInput)
 }
 
-fn evaluate_tokens(tokens: Vec<&str>, stack: &mut Vec<Number>) -> Result<(), EngineError> {
-    for token in tokens {
+fn evaluate_tokens(
+    tokens: Vec<&str>,
+    stack: &mut Vec<Number>,
+    options: EvalOptions,
+) -> Result<(), EngineError> {
+    let mut index = 0;
+    while index < tokens.len() {
+        let token = tokens[index];
         if let Ok(number) = parse::parse_number(token) {
             stack.push(number);
+            index += 1;
             continue;
         }
 
+        if let Some(unit) = parse::parse_unit_spec(token)? {
+            if !options.implicit_conversion && tokens.get(index + 1) != Some(&"in") {
+                return Err(EngineError::MissingConversionTarget);
+            }
+
+            let value = stack.pop().ok_or(EngineError::StackUnderflow {
+                needed: 1,
+                available: 0,
+            })?;
+            stack.push(value.convert_display_unit(unit)?);
+            index += 1;
+            if tokens.get(index) == Some(&"in") {
+                index += 1;
+            }
+            continue;
+        }
+
+        if token == "in" {
+            return Err(EngineError::MissingConversionTarget);
+        }
+
         functions::execute_function(token, stack)?;
+        index += 1;
     }
 
     Ok(())
@@ -54,7 +120,7 @@ fn evaluate_tokens(tokens: Vec<&str>, stack: &mut Vec<Number>) -> Result<(), Eng
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::format_number;
+    use crate::engine::{EngineError, format_number};
 
     fn number(token: &str) -> Number {
         parse::parse_number(token).expect("expected valid number")
@@ -142,5 +208,38 @@ mod tests {
     fn rejects_invalid_approximate_operation() {
         let error = evaluate_expression("-1 sqrt", &[]).expect_err("expected sqrt to fail");
         assert_eq!(error, EngineError::InvalidApproximateOperation("sqrt"));
+    }
+
+    #[test]
+    fn evaluates_unit_addition() {
+        let result = evaluate_expression("1[kB] 2[B] +", &[]).expect("expected unit addition");
+        assert_eq!(format_number(&result), "1.002[kB]");
+    }
+
+    #[test]
+    fn applies_implicit_unit_conversion_before_later_math() {
+        let result = evaluate_expression("1[MB/s] [kB/s] 2 *", &[])
+            .expect("expected conversion shorthand to work");
+        assert_eq!(format_number(&result), "2000[kB/s]");
+    }
+
+    #[test]
+    fn rejects_unit_conversion_for_unitless_value() {
+        let error = evaluate_expression("2 [kB]", &[]).expect_err("expected invalid conversion");
+        assert_eq!(error, EngineError::IncompatibleUnits);
+    }
+
+    #[test]
+    fn explicit_in_works_when_implicit_conversion_is_disabled() {
+        let result = evaluate_expression_with_options(
+            "1[MB/s] [kB/s] in 2 *",
+            &[],
+            EvalOptions {
+                implicit_conversion: false,
+            },
+        )
+        .expect("expected explicit conversion to work");
+
+        assert_eq!(format_number(&result), "2000[kB/s]");
     }
 }

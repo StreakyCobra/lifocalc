@@ -20,4 +20,12 @@ pub enum EngineError {
     DivisionByZero,
     #[error("incompatible units")]
     IncompatibleUnits,
+    #[error("unknown unit: {0}")]
+    UnknownUnit(String),
+    #[error("invalid unit expression: {0}")]
+    InvalidUnitExpression(String),
+    #[error("invalid conversion target")]
+    InvalidConversionTarget,
+    #[error("explicit 'in' requires a preceding unit conversion")]
+    MissingConversionTarget,
 }
