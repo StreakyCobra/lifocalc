@@ -18,4 +18,6 @@ pub enum EngineError {
     StackUnderflow { needed: usize, available: usize },
     #[error("division by zero")]
     DivisionByZero,
+    #[error("incompatible units")]
+    IncompatibleUnits,
 }

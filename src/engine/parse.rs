@@ -124,7 +124,7 @@ fn parse_approximate(token: &str) -> Option<Number> {
     let body = token.strip_suffix('f')?;
     let value = body.parse::<f64>().ok()?;
     if value.is_finite() {
-        Some(Number::Approx(value))
+        Number::from_approx(value).ok()
     } else {
         None
     }
