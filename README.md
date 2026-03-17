@@ -1,6 +1,6 @@
-# lifocalc
+# postarity
 
-`lifocalc` is a terminal RPN calculator built with Rust and ratatui.
+`postarity` is a terminal RPN calculator built with Rust and ratatui.
 
 ## Current boilerplate
 
@@ -11,7 +11,7 @@
   - operator-only input consumes values from the global stack and pushes the result back to the stack.
   - expressions that include inline numbers are evaluated against an independent prompt-local stack, then the full prompt-local result stack is appended to the global stack.
 - History navigation with up/down arrows.
-- Input history is persisted across app restarts in `${XDG_STATE_HOME}/lifocalc/history`, or `~/.local/state/lifocalc/history` when `XDG_STATE_HOME` is unset.
+- Input history is persisted across app restarts in `${XDG_STATE_HOME}/postarity/history`, or `~/.local/state/postarity/history` when `XDG_STATE_HOME` is unset.
 - Persisted history entries are de-duplicated, and expressions that fail evaluation are not written to the history file.
 - Live hint shown after the current input.
 - Exact values can show a gray approximate `| ...f` suffix in the stack and live input hint.
@@ -81,9 +81,9 @@ All numeric values in YAML are strings to keep test files stable while the inter
 
 ## Configuration
 
-`lifocalc` uses an embedded TOML default config from `config/default-config.toml` as the source of truth.
+`postarity` uses an embedded TOML default config from `config/default-config.toml` as the source of truth.
 
-- User overrides are loaded from `${XDG_CONFIG_HOME}/lifocalc/config.toml`, or `~/.config/lifocalc/config.toml` when `XDG_CONFIG_HOME` is unset.
+- User overrides are loaded from `${XDG_CONFIG_HOME}/postarity/config.toml`, or `~/.config/postarity/config.toml` when `XDG_CONFIG_HOME` is unset.
 - Final display settings and keymap are `embedded defaults + user overrides`.
 - Unit conversion shorthand can be disabled with `[units].implicit_conversion = false`, which requires explicit `in` after a bare unit spec.
 - Use `none` to disable a default binding.
