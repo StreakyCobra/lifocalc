@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use lifocalc::{
+use postarity::{
     app::{App, HintToken},
     engine::{self, EngineError},
 };

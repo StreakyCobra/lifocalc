@@ -12,12 +12,12 @@ pub struct HistoryStore {
 impl HistoryStore {
     pub fn for_user() -> Option<Self> {
         if let Some(state_home) = env::var_os("XDG_STATE_HOME") {
-            let path = PathBuf::from(state_home).join("lifocalc/history");
+            let path = PathBuf::from(state_home).join("postarity/history");
             return Some(Self { path });
         }
 
         let home = env::var_os("HOME")?;
-        let path = PathBuf::from(home).join(".local/state/lifocalc/history");
+        let path = PathBuf::from(home).join(".local/state/postarity/history");
         Some(Self { path })
     }
 
@@ -128,7 +128,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("system time should be valid")
             .as_nanos();
-        let path = env::temp_dir().join(format!("lifocalc-{name}-{unique}.history"));
+        let path = env::temp_dir().join(format!("postarity-{name}-{unique}.history"));
         HistoryStore { path }
     }
 }

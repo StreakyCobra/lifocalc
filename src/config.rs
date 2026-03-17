@@ -134,11 +134,11 @@ fn apply_units_config(display: &mut DisplayConfig, raw: Option<RawUnitsConfig>) 
 
 fn user_config_path() -> Option<PathBuf> {
     if let Some(config_home) = env::var_os("XDG_CONFIG_HOME") {
-        return Some(PathBuf::from(config_home).join("lifocalc/config.toml"));
+        return Some(PathBuf::from(config_home).join("postarity/config.toml"));
     }
 
     let home = env::var_os("HOME")?;
-    Some(PathBuf::from(home).join(".config/lifocalc/config.toml"))
+    Some(PathBuf::from(home).join(".config/postarity/config.toml"))
 }
 
 #[cfg(test)]

@@ -6,7 +6,7 @@ use crossterm::{
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use lifocalc::{
+use postarity::{
     app::App,
     config::DisplayConfig,
     history::HistoryStore,
